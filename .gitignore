@@ -23,4 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Documentation (already excluded)
 docs_frontend_with_react/
