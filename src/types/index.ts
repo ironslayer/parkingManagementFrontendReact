@@ -10,15 +10,41 @@ export interface BaseEntity {
 // ==========================================
 // TIPOS DE AUTENTICACIÓN
 // ==========================================
-export interface User extends BaseEntity {
-  username: string;
-  email: string;
-  fullName: string;
-  role: UserRole;
-  isActive: boolean;
+// ============================================================================
+// AUTHENTICATION & USER TYPES
+// ============================================================================
+
+export interface User {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  role: 'ADMIN' | 'OPERATOR' | 'USER'
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
-export type UserRole = 'ADMIN' | 'OPERATOR' | 'CUSTOMER';
+export interface LoginCredentials {
+  email: string
+  password: string
+}
+
+export interface AuthResponse {
+  success: boolean
+  data?: {
+    user: User
+    token: string
+    refreshToken: string
+  }
+  error?: string
+}
+
+export interface Permission {
+  id: string
+  name: string
+  description: string
+}
 
 export interface LoginRequest {
   username: string;
