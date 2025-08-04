@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Play, Clock, Car, Calendar } from 'lucide-react'
 import { SessionList, SessionForm } from '../components/sessions'
+import { PaymentStats } from '../components/payments/PaymentStats'
 import { Button, Card, CardHeader, CardContent } from '../components/ui'
 import { useParkingSessionStore } from '../store/parkingSessionStore'
 import type { ParkingSession } from '../types'
@@ -90,6 +91,9 @@ export const SessionsPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Payment Statistics */}
+      <PaymentStats />
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-4">
