@@ -15,15 +15,16 @@ export interface LoginRequest {
 
 export interface AuthApiResponse {
   token: string;
-  user?: {
-    id: number;
-    email: string;
-    firstName: string;
-    lastName: string;
-    phone?: string;
-    role: 'ADMIN' | 'OPERATOR' | 'CUSTOMER';
-    createdAt: string;
-  };
+}
+
+export interface UserProfileResponse {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  role: 'ADMIN' | 'OPERATOR' | 'CUSTOMER';
+  createdAt: string;
 }
 
 export interface RefreshTokenResponse {
@@ -43,11 +44,39 @@ export interface AuthResult {
 // ==========================================
 export class AuthService {
   // ==========================================
+  // MÉTODOS PRIVADOS
+  // ==========================================
+  
+  /**
+   * Decodifica el JWT token para extraer el payload
+   */
+  private decodeJwtPayload(token: string): { user_id: number; sub: string; authorities: string[] } | null {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('❌ Error decodificando JWT:', error);
+      return null;
+    }
+  }
+
+  // ==========================================
   // AUTENTICACIÓN
   // ==========================================
   async login(credentials: LoginCredentials): Promise<AuthResult> {
     try {
       console.log('🔐 Intentando autenticación con backend...');
+      
+      // Limpiar cualquier token anterior antes del login
+      localStorage.removeItem('parking_auth_token');
+      apiService.clearAuthToken();
       
       const response = await apiService.post<AuthApiResponse>(
         API_CONFIG.ENDPOINTS.AUTH.LOGIN,
@@ -62,36 +91,27 @@ export class AuthService {
       // Configurar token en el cliente HTTP
       apiService.setAuthToken(response.token);
 
-      // El backend puede devolver user info o solo token
-      let user: User;
-      if (response.user) {
-        user = {
-          id: response.user.id.toString(),
-          email: response.user.email,
-          firstName: response.user.firstName,
-          lastName: response.user.lastName,
-          role: response.user.role, // Mantener el rol original del backend
-          isActive: true,
-          createdAt: response.user.createdAt,
-          updatedAt: response.user.createdAt,
-        };
-      } else {
-        // Si no viene user info, hacer petición adicional al perfil
-        const profileResponse = await apiService.get<NonNullable<AuthApiResponse['user']>>(
-          API_CONFIG.ENDPOINTS.AUTH.PROFILE
-        );
-
-        user = {
-          id: profileResponse.id.toString(),
-          email: profileResponse.email,
-          firstName: profileResponse.firstName,
-          lastName: profileResponse.lastName,
-          role: profileResponse.role,
-          isActive: true,
-          createdAt: profileResponse.createdAt,
-          updatedAt: profileResponse.createdAt,
-        };
+      // Decodificar el JWT para obtener el user_id
+      const payload = this.decodeJwtPayload(response.token);
+      if (!payload || !payload.user_id) {
+        throw new Error('Token JWT inválido: no contiene user_id');
       }
+
+      // Obtener información del usuario usando su ID
+      const profileResponse = await apiService.get<UserProfileResponse>(
+        API_CONFIG.ENDPOINTS.AUTH.USER_BY_ID(payload.user_id.toString())
+      );
+
+      const user: User = {
+        id: profileResponse.id.toString(),
+        email: profileResponse.email,
+        firstName: profileResponse.firstName,
+        lastName: profileResponse.lastName,
+        role: profileResponse.role,
+        isActive: true,
+        createdAt: profileResponse.createdAt,
+        updatedAt: profileResponse.createdAt,
+      };
 
       const authResult: AuthResult = {
         user,
@@ -188,9 +208,10 @@ export class AuthService {
     try {
       console.log('🚪 Cerrando sesión...');
       
-      // Intentar notificar al backend (opcional)
+      // Notificar al backend del logout
       try {
-        await apiService.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT);
+        await apiService.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT, {});
+        console.log('✅ Logout notificado al backend');
       } catch (error) {
         console.warn('⚠️ No se pudo notificar logout al backend:', error);
       }
@@ -211,19 +232,20 @@ export class AuthService {
   // ==========================================
   async refreshToken(): Promise<string> {
     try {
-      console.log('🔄 Renovando token...');
+      console.log('🔄 Backend no implementa refresh token, re-validando sesión...');
       
-      const response = await apiService.post<RefreshTokenResponse>(
-        API_CONFIG.ENDPOINTS.AUTH.REFRESH
-      );
-
-      // Actualizar token en el cliente
-      apiService.setAuthToken(response.access_token);
+      // Como no hay endpoint de refresh, validamos que el token actual siga siendo válido
+      await this.validateToken();
       
-      console.log('✅ Token renovado exitosamente');
-      return response.access_token;
+      const currentToken = this.getCurrentToken();
+      if (!currentToken) {
+        throw new Error('No hay token para renovar');
+      }
+      
+      console.log('✅ Token validado exitosamente');
+      return currentToken;
     } catch (error) {
-      console.error('❌ Error al renovar token:', error);
+      console.error('❌ Error al validar token:', error);
       throw new Error('No se pudo renovar el token de autenticación');
     }
   }
@@ -236,7 +258,7 @@ export class AuthService {
       console.log('🔍 Validando token actual...');
       
       // Hacer una petición al perfil para validar el token
-      const response = await apiService.get<NonNullable<AuthApiResponse['user']>>(
+      const response = await apiService.get<UserProfileResponse>(
         API_CONFIG.ENDPOINTS.AUTH.PROFILE
       );
       
