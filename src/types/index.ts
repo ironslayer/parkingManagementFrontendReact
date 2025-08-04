@@ -33,7 +33,7 @@ export interface LoginCredentials {
 export interface AuthResponse {
   success: boolean
   data?: {
-    user: User
+    user?: User
     token: string
     refreshToken: string
   }
