@@ -20,11 +20,15 @@ export interface AuthApiResponse {
 export interface UserProfileResponse {
   id: number;
   email: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;  // Frontend standard
+  lastName?: string;   // Frontend standard
+  firstname?: string;  // Backend format
+  lastname?: string;   // Backend format
   phone?: string;
   role: 'ADMIN' | 'OPERATOR' | 'CUSTOMER';
   createdAt: string;
+  updatedAt?: string;
+  isActive?: boolean;
 }
 
 export interface RefreshTokenResponse {
@@ -105,8 +109,8 @@ export class AuthService {
       const user: User = {
         id: profileResponse.id.toString(),
         email: profileResponse.email,
-        firstName: profileResponse.firstName,
-        lastName: profileResponse.lastName,
+        firstName: profileResponse.firstname || profileResponse.firstName || '',
+        lastName: profileResponse.lastname || profileResponse.lastName || '',
         role: profileResponse.role,
         isActive: true,
         createdAt: profileResponse.createdAt,
@@ -265,8 +269,8 @@ export class AuthService {
       const user: User = {
         id: response.id.toString(),
         email: response.email,
-        firstName: response.firstName,
-        lastName: response.lastName,
+        firstName: response.firstname || response.firstName || '',
+        lastName: response.lastname || response.lastName || '',
         role: response.role,
         isActive: true,
         createdAt: response.createdAt,
