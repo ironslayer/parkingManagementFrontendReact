@@ -19,7 +19,7 @@ export interface User {
   email: string
   firstName: string
   lastName: string
-  role: 'ADMIN' | 'OPERATOR' | 'USER'
+  role: 'ADMIN' | 'OPERATOR' | 'USER' | 'CUSTOMER'
   isActive: boolean
   createdAt: string
   updatedAt: string
