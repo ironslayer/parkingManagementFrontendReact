@@ -8,6 +8,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { DashboardHeader } from './components/layout/DashboardHeader'
 import { useAuthStore } from './store/authStore'
 import { usePermissions } from './hooks/usePermissions'
+import DashboardPage from './pages/DashboardPage'
 import VehiclesPage from './pages/VehiclesPage'
 import SessionsPage from './pages/SessionsPage'
 
@@ -57,6 +58,7 @@ function App() {
           </div>
         )
       default: // dashboard
+        return <DashboardPage />
         return (
           <div className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
