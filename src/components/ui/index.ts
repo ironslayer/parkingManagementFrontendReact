@@ -16,4 +16,8 @@ export { Badge, VehicleTypeBadge, SessionStatusBadge, PaymentStatusBadge } from 
 export type { BadgeProps } from './Badge';
 
 export { LoadingSpinner } from './LoadingSpinner';
+
 export { Modal, ModalHeader, ModalFooter } from './Modal';
+
+export { Table } from './Table';
+export type { TableProps, TableColumn, PaginationProps } from './Table';
