@@ -38,9 +38,11 @@ export const API_CONFIG = {
     // Autenticación
     AUTH: {
       LOGIN: '/users/authenticate',
-      REFRESH: '/users/refresh',
       LOGOUT: '/users/logout',
       PROFILE: '/users/profile',
+      USER_BY_ID: (id: string) => `/users/${id}`,
+      REGISTER: '/users/register',
+      REGISTER_OPERATOR: '/users/register-operator',
     },
     
     // Vehículos
