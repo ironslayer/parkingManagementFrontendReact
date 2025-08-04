@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Car, Users, Calendar, Home } from 'lucide-react'
 import './App.css'
 import { Button } from './components/ui/Button'
@@ -17,8 +17,18 @@ type Page = 'dashboard' | 'vehicles' | 'users' | 'sessions'
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState<Page>('dashboard')
-  const { user } = useAuthStore()
+  const { user, validateSession } = useAuthStore()
   const { isAdmin, isOperator } = usePermissions()
+
+  // Validar sesión al cargar la aplicación
+  useEffect(() => {
+    const initializeAuth = async () => {
+      console.log('🚀 Inicializando aplicación...')
+      await validateSession()
+    }
+    
+    initializeAuth()
+  }, [validateSession])
 
   const navigationItems = [
     { id: 'dashboard' as Page, label: 'Dashboard', icon: Home, show: true },
