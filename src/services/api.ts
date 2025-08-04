@@ -23,10 +23,15 @@ const createApiClient = (): AxiosInstance => {
   // ==========================================
   client.interceptors.request.use(
     (config) => {
-      // Agregar token JWT si existe
-      const token = localStorage.getItem('parking_auth_token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      // No agregar token JWT en el endpoint de autenticación
+      const isAuthEndpoint = config.url?.includes('/authenticate');
+      
+      // Agregar token JWT si existe y no es endpoint de auth
+      if (!isAuthEndpoint) {
+        const token = localStorage.getItem('parking_auth_token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
 
       // Log de la petición en desarrollo
@@ -34,6 +39,7 @@ const createApiClient = (): AxiosInstance => {
         console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
           data: config.data,
           params: config.params,
+          hasAuth: !!config.headers.Authorization,
         });
       }
 
