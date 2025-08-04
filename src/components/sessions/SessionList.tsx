@@ -4,6 +4,7 @@ import type { ParkingSession } from '../../types'
 import { useParkingSessionStore } from '../../store/parkingSessionStore'
 import { Button, SessionStatusBadge, VehicleTypeBadge, LoadingSpinner, Modal } from '../ui'
 import { formatCurrency, formatDuration } from '../../utils'
+import EndSessionModal from './EndSessionModal'
 
 // ==========================================
 // TIPOS DEL COMPONENTE
@@ -47,6 +48,8 @@ export const SessionList: React.FC<SessionListProps> = ({
   const pageSize = 10
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [sessionToCancel, setSessionToCancel] = useState<ParkingSession | null>(null)
+  const [showEndModal, setShowEndModal] = useState(false)
+  const [sessionToEnd, setSessionToEnd] = useState<ParkingSession | null>(null)
   const [cancelReason, setCancelReason] = useState('')
 
   // Timer para actualizar tiempo transcurrido
@@ -330,13 +333,14 @@ export const SessionList: React.FC<SessionListProps> = ({
                             </Button>
                           )}
                           
-                          {session.status === 'ACTIVE' && onEndSession && (
+                          {session.status === 'ACTIVE' && (
                             <Button
                               variant="primary"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                onEndSession(session)
+                                setSessionToEnd(session)
+                                setShowEndModal(true)
                               }}
                               leftIcon={<Square className="w-3 h-3" />}
                               className="h-8 px-2"
@@ -461,6 +465,20 @@ export const SessionList: React.FC<SessionListProps> = ({
           </div>
         </div>
       </Modal>
+
+      {/* End Session Modal */}
+      <EndSessionModal
+        isOpen={showEndModal}
+        onClose={() => {
+          setShowEndModal(false)
+          setSessionToEnd(null)
+        }}
+        session={sessionToEnd}
+        onSessionEnded={(endedSession) => {
+          onEndSession?.(endedSession)
+          fetchSessions()
+        }}
+      />
     </div>
   )
 }
