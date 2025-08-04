@@ -33,13 +33,14 @@ export const ROUTES = {
 // CONFIGURACIÓN DE LA API
 // ==========================================
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1',
   ENDPOINTS: {
     // Autenticación
     AUTH: {
-      LOGIN: '/auth/authenticate',
-      REFRESH: '/auth/refresh',
-      LOGOUT: '/auth/logout',
+      LOGIN: '/users/authenticate',
+      REFRESH: '/users/refresh',
+      LOGOUT: '/users/logout',
+      PROFILE: '/users/profile',
     },
     
     // Vehículos
@@ -55,15 +56,32 @@ export const API_CONFIG = {
       BY_ID: (id: string) => `/parking-sessions/${id}`,
       ACTIVE: '/parking-sessions/active',
       START: '/parking-sessions/start',
-      END: (id: string) => `/parking-sessions/${id}/end`,
+      END: '/parking-sessions/end',
+      BY_VEHICLE: (licensePlate: string) => `/parking-sessions/vehicle/${licensePlate}`,
     },
     
     // Pagos
     PAYMENTS: {
       BASE: '/payments',
       BY_ID: (id: string) => `/payments/${id}`,
-      BY_SESSION: (sessionId: string) => `/payments/session/${sessionId}`,
+      CALCULATE: '/payments/calculate',
+      PROCESS: '/payments/process',
     },
+    
+    // Dashboard
+    DASHBOARD: {
+      STATS: '/dashboard/stats',
+      OCCUPANCY_HISTORY: '/dashboard/occupancy-history',
+      REVENUE_REPORT: '/dashboard/revenue-report',
+      POPULAR_HOURS: '/dashboard/popular-hours',
+      VEHICLE_TYPE_STATS: '/dashboard/vehicle-type-stats',
+      RECENT_SESSIONS: '/dashboard/recent-sessions',
+    },
+    
+    // Configuración
+    VEHICLE_TYPES: '/vehicle-types',
+    PARKING_SPACES: '/parking-spaces',
+    RATE_CONFIGS: '/rate-configs',
     
     // Reportes
     REPORTS: {
@@ -83,6 +101,7 @@ export const PERMISSIONS = {
     ADMIN: 'ADMIN',
     OPERATOR: 'OPERATOR',
     CUSTOMER: 'CUSTOMER',
+    USER: 'USER', // Alias para CUSTOMER
   },
   
   // Acciones permitidas por rol
@@ -91,13 +110,13 @@ export const PERMISSIONS = {
     VIEW_DASHBOARD: ['ADMIN', 'OPERATOR'],
     
     // Vehículos
-    VIEW_VEHICLES: ['ADMIN', 'OPERATOR'],
-    CREATE_VEHICLE: ['ADMIN', 'OPERATOR'],
-    EDIT_VEHICLE: ['ADMIN', 'OPERATOR'],
-    DELETE_VEHICLE: ['ADMIN'],
+    VIEW_VEHICLES: ['ADMIN', 'OPERATOR', 'CUSTOMER'],
+    CREATE_VEHICLE: ['ADMIN', 'OPERATOR', 'CUSTOMER'],
+    EDIT_VEHICLE: ['ADMIN', 'OPERATOR', 'CUSTOMER'],
+    DELETE_VEHICLE: ['ADMIN', 'OPERATOR'],
     
     // Sesiones
-    VIEW_SESSIONS: ['ADMIN', 'OPERATOR'],
+    VIEW_SESSIONS: ['ADMIN', 'OPERATOR', 'CUSTOMER'],
     CREATE_SESSION: ['ADMIN', 'OPERATOR'],
     END_SESSION: ['ADMIN', 'OPERATOR'],
     
