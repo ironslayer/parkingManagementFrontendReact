@@ -9,6 +9,7 @@ import { DashboardHeader } from './components/layout/DashboardHeader'
 import { useAuthStore } from './store/authStore'
 import { usePermissions } from './hooks/usePermissions'
 import VehiclesPage from './pages/VehiclesPage'
+import SessionsPage from './pages/SessionsPage'
 
 type Page = 'dashboard' | 'vehicles' | 'users' | 'sessions'
 
@@ -51,12 +52,7 @@ function App() {
         return (
           <div className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-              <Card>
-                <CardHeader title="Sesiones de Parking" />
-                <CardContent>
-                  <p className="text-gray-600">Esta funcionalidad se implementará en la siguiente fase.</p>
-                </CardContent>
-              </Card>
+              <SessionsPage />
             </div>
           </div>
         )
