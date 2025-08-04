@@ -111,7 +111,7 @@ const authAPI = {
     return {
       success: true,
       data: {
-        user: null, // El usuario ya está en el store
+        user: undefined, // El usuario ya está en el store
         token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refreshed.token',
         refreshToken: 'new.refresh.token'
       }
