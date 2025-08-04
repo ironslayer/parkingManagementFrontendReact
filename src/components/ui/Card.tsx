@@ -22,7 +22,7 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   
   /**
    * Contenido de la tarjeta
-   */
+    */
   children: React.ReactNode;
 }
 
@@ -139,7 +139,7 @@ export const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
       >
         <div className="flex-1">
           {title && (
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            <h3 className="mb-1 text-lg font-semibold text-gray-900">
               {title}
             </h3>
           )}
