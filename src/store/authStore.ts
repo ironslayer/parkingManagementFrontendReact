@@ -1,122 +1,24 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { User, LoginCredentials, AuthResponse } from '../types'
+import type { User, LoginCredentials } from '../types'
+import { authService, type AuthResult } from '../services/authService'
 
 interface AuthState {
   // Estado
   user: User | null
   token: string | null
+  refreshToken: string | null
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
 
   // Acciones
   login: (credentials: LoginCredentials) => Promise<void>
-  logout: () => void
-  register: (userData: RegisterData) => Promise<void>
-  refreshToken: () => Promise<void>
+  logout: () => Promise<void>
+  refreshTokenAsync: () => Promise<void>
+  validateSession: () => Promise<void>
   clearError: () => void
   setLoading: (loading: boolean) => void
-}
-
-interface RegisterData {
-  email: string
-  password: string
-  firstName: string
-  lastName: string
-  role?: 'ADMIN' | 'OPERATOR' | 'USER'
-}
-
-// Simulación de API - En producción esto conectaría con tu backend Spring Boot
-const authAPI = {
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Simulamos una llamada a la API
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Usuario demo para testing
-    if (credentials.email === 'admin@parking.com' && credentials.password === 'admin123') {
-      return {
-        success: true,
-        data: {
-          user: {
-            id: '1',
-            email: 'admin@parking.com',
-            firstName: 'Admin',
-            lastName: 'Sistema',
-            role: 'ADMIN',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.token',
-          refreshToken: 'refresh.token.demo'
-        }
-      }
-    }
-    
-    // Usuario operador demo
-    if (credentials.email === 'operador@parking.com' && credentials.password === 'op123') {
-      return {
-        success: true,
-        data: {
-          user: {
-            id: '2',
-            email: 'operador@parking.com',
-            firstName: 'Juan',
-            lastName: 'Operador',
-            role: 'OPERATOR',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.token.operator',
-          refreshToken: 'refresh.token.demo.operator'
-        }
-      }
-    }
-
-    // Credenciales inválidas
-    return {
-      success: false,
-      error: 'Credenciales inválidas'
-    }
-  },
-
-  async register(userData: RegisterData): Promise<AuthResponse> {
-    await new Promise(resolve => setTimeout(resolve, 1200))
-    
-    // Simulamos registro exitoso
-    return {
-      success: true,
-      data: {
-        user: {
-          id: Date.now().toString(),
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          role: userData.role || 'USER',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.new.user',
-        refreshToken: 'refresh.token.new.user'
-      }
-    }
-  },
-
-  async refreshToken(): Promise<AuthResponse> {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    return {
-      success: true,
-      data: {
-        user: undefined, // El usuario ya está en el store
-        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refreshed.token',
-        refreshToken: 'new.refresh.token'
-      }
-    }
-  }
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -125,6 +27,7 @@ export const useAuthStore = create<AuthState>()(
       // Estado inicial
       user: null,
       token: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -134,79 +37,109 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null })
         
         try {
-          const response = await authAPI.login(credentials)
+          console.log('🔐 Iniciando sesión con backend...')
+          const authResult: AuthResult = await authService.login(credentials)
           
-          if (response.success && response.data) {
-            set({
-              user: response.data.user,
-              token: response.data.token,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null
-            })
-          } else {
-            set({
-              isLoading: false,
-              error: response.error || 'Error al iniciar sesión'
-            })
-          }
+          set({
+            user: authResult.user,
+            token: authResult.token,
+            refreshToken: authResult.refreshToken,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null
+          })
+          
+          console.log('✅ Sesión iniciada correctamente:', authResult.user.email)
         } catch (error) {
+          console.error('❌ Error al iniciar sesión:', error)
           set({
             isLoading: false,
-            error: 'Error de conexión. Intenta nuevamente.'
+            error: error instanceof Error ? error.message : 'Error al iniciar sesión'
           })
         }
       },
 
-      logout: () => {
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          error: null
-        })
-      },
-
-      register: async (userData: RegisterData) => {
-        set({ isLoading: true, error: null })
+      logout: async () => {
+        set({ isLoading: true })
         
         try {
-          const response = await authAPI.register(userData)
+          console.log('🚪 Cerrando sesión...')
+          await authService.logout()
           
-          if (response.success && response.data) {
-            set({
-              user: response.data.user,
-              token: response.data.token,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null
-            })
-          } else {
-            set({
-              isLoading: false,
-              error: response.error || 'Error al registrar usuario'
-            })
-          }
-        } catch (error) {
           set({
+            user: null,
+            token: null,
+            refreshToken: null,
+            isAuthenticated: false,
             isLoading: false,
-            error: 'Error de conexión. Intenta nuevamente.'
+            error: null
+          })
+          
+          console.log('✅ Sesión cerrada correctamente')
+        } catch (error) {
+          console.error('❌ Error al cerrar sesión:', error)
+          // Aunque falle, limpiar el estado local
+          set({
+            user: null,
+            token: null,
+            refreshToken: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null
           })
         }
       },
 
-      refreshToken: async () => {
+      refreshTokenAsync: async () => {
         try {
-          const response = await authAPI.refreshToken()
+          console.log('🔄 Renovando token...')
+          const newToken = await authService.refreshToken()
           
-          if (response.success && response.data) {
-            set({
-              token: response.data.token
-            })
-          }
+          set({
+            token: newToken
+          })
+          
+          console.log('✅ Token renovado correctamente')
         } catch (error) {
-          // Si falla el refresh, cerramos sesión
+          console.error('❌ Error al renovar token:', error)
+          // Si falla el refresh, cerrar sesión
           get().logout()
+        }
+      },
+
+      validateSession: async () => {
+        const { token } = get()
+        
+        if (!token) {
+          console.log('ℹ️ No hay token para validar')
+          return
+        }
+        
+        set({ isLoading: true })
+        
+        try {
+          console.log('🔍 Validando sesión existente...')
+          const user = await authService.validateToken()
+          
+          set({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null
+          })
+          
+          console.log('✅ Sesión válida:', user.email)
+        } catch (error) {
+          console.error('❌ Sesión inválida:', error)
+          // Limpiar sesión si es inválida
+          set({
+            user: null,
+            token: null,
+            refreshToken: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null
+          })
         }
       },
 
@@ -215,10 +148,11 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (loading: boolean) => set({ isLoading: loading })
     }),
     {
-      name: 'auth-storage',
+      name: 'parking-auth-storage',
       partialize: (state) => ({
         user: state.user,
         token: state.token,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated
       })
     }
