@@ -8,3 +8,4 @@ export { MetricWidget as MetricWidgetComponent } from './MetricWidget'
 // export { default as ChartWidget } from './ChartWidget'
 // export { default as ActivityFeed } from './ActivityFeed'
 // export { default as AlertsPanel } from './AlertsPanel'
+
