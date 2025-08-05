@@ -48,30 +48,6 @@ export interface AuthResult {
 // ==========================================
 export class AuthService {
   // ==========================================
-  // MÉTODOS PRIVADOS
-  // ==========================================
-  
-  /**
-   * Decodifica el JWT token para extraer el payload
-   */
-  private decodeJwtPayload(token: string): { user_id: number; sub: string; authorities: string[] } | null {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(jsonPayload);
-    } catch (error) {
-      console.error('❌ Error decodificando JWT:', error);
-      return null;
-    }
-  }
-
-  // ==========================================
   // AUTENTICACIÓN
   // ==========================================
   async login(credentials: LoginCredentials): Promise<AuthResult> {
@@ -95,16 +71,12 @@ export class AuthService {
       // Configurar token en el cliente HTTP
       apiService.setAuthToken(response.token);
 
-      // Decodificar el JWT para obtener el user_id
-      const payload = this.decodeJwtPayload(response.token);
-      if (!payload || !payload.user_id) {
-        throw new Error('Token JWT inválido: no contiene user_id');
-      }
-
-      // Obtener información del usuario usando su ID
+      // Obtener información del usuario desde el perfil
       const profileResponse = await apiService.get<UserProfileResponse>(
-        API_CONFIG.ENDPOINTS.AUTH.USER_BY_ID(payload.user_id.toString())
+        API_CONFIG.ENDPOINTS.AUTH.PROFILE
       );
+      
+      console.log('✅ Perfil obtenido del backend');
 
       const user: User = {
         id: profileResponse.id.toString(),
