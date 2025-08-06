@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Car } from 'lucide-react'
+import { Plus, Edit, Car } from 'lucide-react'
 import type { Vehicle, VehicleType } from '../../types'
 import { useVehicleStore } from '../../store/vehicleStore'
-import { Button, Table, VehicleTypeBadge, LoadingSpinner, Modal } from '../ui'
+import { Button, Table, VehicleTypeBadge, LoadingSpinner, ToggleSwitch } from '../ui'
+import { useAuth } from '../../hooks/useAuth'
 import type { TableColumn } from '../ui'
 
 // ==========================================
@@ -42,15 +43,15 @@ export const VehicleList: React.FC<VehicleListProps> = ({
     isLoading,
     error,
     fetchVehicles,
-    deleteVehicle,
+    changeVehicleStatus,
     clearError
   } = useVehicleStore()
+
+  const { isAdmin } = useAuth() // Para verificar si puede cambiar estados
 
   const [filters, setFilters] = useState<VehicleFilters>({})
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null)
   const [sortConfig, setSortConfig] = useState<{
     key: string
     direction: 'asc' | 'desc'
@@ -152,23 +153,6 @@ export const VehicleList: React.FC<VehicleListProps> = ({
     setSortConfig({ key: column, direction })
   }
 
-  const handleDelete = async (vehicle: Vehicle) => {
-    setVehicleToDelete(vehicle)
-    setShowDeleteModal(true)
-  }
-
-  const confirmDelete = async () => {
-    if (vehicleToDelete) {
-      try {
-        await deleteVehicle(vehicleToDelete.id)
-        setShowDeleteModal(false)
-        setVehicleToDelete(null)
-      } catch (error) {
-        console.error('Error al eliminar vehículo:', error)
-      }
-    }
-  }
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
   }
@@ -185,6 +169,7 @@ export const VehicleList: React.FC<VehicleListProps> = ({
     vehicleType: vehicle.vehicleType,
     brand: vehicle.brand || '',
     model: vehicle.model || '',
+    isActive: vehicle.isActive,
     ownerName: vehicle.ownerName || '',
     createdAt: vehicle.createdAt,
     originalVehicle: vehicle
@@ -222,6 +207,25 @@ export const VehicleList: React.FC<VehicleListProps> = ({
       label: 'Modelo',
       sortable: true
     },
+    {
+      key: 'isActive',
+      label: 'Estado',
+      sortable: true,
+      render: (value) => {
+        const isActive = value as boolean;
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              isActive
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
+            {isActive ? '✅ Activo' : '❌ Inactivo'}
+          </span>
+        );
+      }
+    },
     ...(!compact ? [
       {
         key: 'ownerName' as keyof typeof tableData[0],
@@ -251,7 +255,7 @@ export const VehicleList: React.FC<VehicleListProps> = ({
         render: (_: unknown, row: typeof tableData[0]) => {
           const vehicle = row.originalVehicle
           return (
-            <div className="flex items-center justify-center gap-1">
+            <div className="flex items-center justify-center gap-3">
               {onEditVehicle && (
                 <Button
                   variant="outline"
@@ -266,18 +270,30 @@ export const VehicleList: React.FC<VehicleListProps> = ({
                   Editar
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleDelete(vehicle)
-                }}
-                leftIcon={<Trash2 className="w-3 h-3" />}
-                className="h-8 px-2 text-red-600 hover:text-red-700 hover:border-red-300"
-              >
-                Eliminar
-              </Button>
+              
+              {/* Toggle para activar/desactivar - Solo ADMIN */}
+              {isAdmin && (
+                <div className="flex items-center gap-2">
+                  <ToggleSwitch
+                    checked={vehicle.isActive}
+                    onChange={async (isActive) => {
+                      try {
+                        await changeVehicleStatus(vehicle.id, isActive)
+                      } catch (error) {
+                        console.error('Error cambiando estado del vehículo:', error)
+                        alert(`Error: No se pudo ${isActive ? 'activar' : 'desactivar'} el vehículo`)
+                      }
+                    }}
+                    size="sm"
+                    color={vehicle.isActive ? 'green' : 'red'}
+                    disabled={isLoading}
+                    loading={isLoading}
+                  />
+                  <span className="text-xs text-gray-600">
+                    {vehicle.isActive ? 'Activo' : 'Inactivo'}
+                  </span>
+                </div>
+              )}
             </div>
           )
         }
@@ -387,43 +403,6 @@ export const VehicleList: React.FC<VehicleListProps> = ({
         }}
         className={compact ? 'shadow-none border' : undefined}
       />
-
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        title="Confirmar Eliminación"
-        size="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            ¿Estás seguro de que deseas eliminar el vehículo con placa{' '}
-            <span className="font-mono font-semibold text-blue-600">
-              {vehicleToDelete?.licensePlate}
-            </span>
-            ?
-          </p>
-          <p className="text-sm text-gray-500">
-            Esta acción no se puede deshacer.
-          </p>
-          
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteModal(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="danger"
-              onClick={confirmDelete}
-              loading={isLoading}
-            >
-              Eliminar
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   )
 }
