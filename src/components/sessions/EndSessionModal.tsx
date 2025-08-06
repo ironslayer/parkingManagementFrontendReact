@@ -54,19 +54,29 @@ export const EndSessionModal: React.FC<EndSessionModalProps> = ({
   // ==========================================
   // FUNCIONES AUXILIARES
   // ==========================================
-  const calculatePayment = useCallback(() => {
+  const calculatePayment = useCallback(async () => {
     if (!session) return
+    
+    // Validar que tenemos los datos necesarios
+    if (!session.vehicle) {
+      console.error('Session vehicle data is missing')
+      return
+    }
+    
+    if (!session.rate || session.rate <= 0) {
+      console.error('Session rate is missing or invalid')
+      return
+    }
 
     setIsCalculating(true)
-    
-    // Simular cálculo del backend
-    setTimeout(() => {
+
+    try {
       const now = new Date()
       const entryTime = new Date(session.entryTime)
       const durationMs = now.getTime() - entryTime.getTime()
       const durationMinutes = Math.floor(durationMs / (1000 * 60))
-      const durationHours = durationMinutes / 60
-      
+      const durationHours = durationMs / (1000 * 60 * 60)
+
       // Calcular monto redondeando hacia arriba (mínimo 1 hora)
       const billableHours = Math.max(1, Math.ceil(durationHours))
       const totalAmount = billableHours * session.rate
@@ -88,7 +98,10 @@ export const EndSessionModal: React.FC<EndSessionModalProps> = ({
 
       setPaymentCalculation(calculation)
       setIsCalculating(false)
-    }, 1000) // Simular delay del servidor
+    } catch (error) {
+      console.error('Error calculating payment:', error)
+      setIsCalculating(false)
+    }
   }, [session])
 
   // ==========================================
@@ -125,6 +138,7 @@ export const EndSessionModal: React.FC<EndSessionModalProps> = ({
       // Luego finalizar la sesión
       const endedSession = await endSession({
         sessionId: session.id,
+        licensePlate: session.vehicle.licensePlate,
         exitTime: paymentCalculation.exitTime,
         paymentMethod,
         notes: notes || undefined
@@ -216,10 +230,10 @@ export const EndSessionModal: React.FC<EndSessionModalProps> = ({
             </div>
             <div>
               <h3 className="font-semibold text-blue-900">
-                {session.vehicle.licensePlate}
+                {session.vehicle?.licensePlate || 'N/A'}
               </h3>
               <p className="text-sm text-blue-700">
-                {session.vehicle.brand} {session.vehicle.model} • {session.vehicle.vehicleType}
+                {session.vehicle?.brand || 'N/A'} {session.vehicle?.model || 'N/A'} • {session.vehicle?.vehicleType || 'N/A'}
               </p>
               {session.parkingSpot && (
                 <p className="text-xs text-blue-600">
