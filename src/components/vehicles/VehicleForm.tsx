@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Car, Save, X } from 'lucide-react'
-import type { Vehicle, VehicleType, CreateVehicleRequest, UpdateVehicleRequest } from '../../types'
+import type { Vehicle, CreateVehicleRequest, UpdateVehicleRequest } from '../../types'
+import type { VehicleTypeAPI } from '../../services/vehicleTypeService'
 import { useVehicleStore } from '../../store/vehicleStore'
+import { vehicleTypeService } from '../../services/vehicleTypeService'
 import { Button, Input, Modal } from '../ui'
 
 // ==========================================
@@ -17,24 +19,22 @@ interface VehicleFormProps {
 
 interface FormData {
   licensePlate: string
-  vehicleType: VehicleType
+  vehicleTypeId: number
   brand: string
   model: string
   color: string
   ownerName: string
   ownerPhone: string
-  ownerEmail: string
 }
 
 interface FormErrors {
   licensePlate?: string
-  vehicleType?: string
+  vehicleTypeId?: string
   brand?: string
   model?: string
   color?: string
   ownerName?: string
   ownerPhone?: string
-  ownerEmail?: string
 }
 
 // ==========================================
@@ -52,27 +52,26 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({
   // ==========================================
   const { createVehicle, updateVehicle, isLoading, error, clearError } = useVehicleStore()
 
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleTypeAPI[]>([])
   const [formData, setFormData] = useState<FormData>({
     licensePlate: '',
-    vehicleType: 'CAR',
+    vehicleTypeId: 1, // Por defecto AUTO
     brand: '',
     model: '',
     color: '',
     ownerName: '',
-    ownerPhone: '',
-    ownerEmail: ''
+    ownerPhone: ''
   })
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<Record<keyof FormData, boolean>>({
     licensePlate: false,
-    vehicleType: false,
+    vehicleTypeId: false,
     brand: false,
     model: false,
     color: false,
     ownerName: false,
-    ownerPhone: false,
-    ownerEmail: false
+    ownerPhone: false
   })
 
   // ==========================================
@@ -80,39 +79,41 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({
   // ==========================================
   useEffect(() => {
     if (isOpen) {
+      // Cargar tipos de vehículos
+      vehicleTypeService.getVehicleTypes()
+        .then(setVehicleTypes)
+        .catch(console.error)
+
       if (mode === 'edit' && vehicle) {
         setFormData({
           licensePlate: vehicle.licensePlate,
-          vehicleType: vehicle.vehicleType,
+          vehicleTypeId: vehicle.vehicleTypeId,
           brand: vehicle.brand || '',
           model: vehicle.model || '',
           color: vehicle.color || '',
           ownerName: vehicle.ownerName || '',
-          ownerPhone: vehicle.ownerPhone || '',
-          ownerEmail: vehicle.ownerEmail || ''
+          ownerPhone: vehicle.ownerPhone || ''
         })
       } else {
         setFormData({
           licensePlate: '',
-          vehicleType: 'CAR',
+          vehicleTypeId: 1, // Por defecto AUTO
           brand: '',
           model: '',
           color: '',
           ownerName: '',
-          ownerPhone: '',
-          ownerEmail: ''
+          ownerPhone: ''
         })
       }
       setErrors({})
       setTouched({
         licensePlate: false,
-        vehicleType: false,
+        vehicleTypeId: false,
         brand: false,
         model: false,
         color: false,
         ownerName: false,
-        ownerPhone: false,
-        ownerEmail: false
+        ownerPhone: false
       })
       clearError()
     }
@@ -121,26 +122,24 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({
   // ==========================================
   // VALIDACIÓN
   // ==========================================
-  const validateField = (name: keyof FormData, value: string): string | undefined => {
+  const validateField = (name: keyof FormData, value: string | number): string | undefined => {
     switch (name) {
       case 'licensePlate':
-        if (!value.trim()) return 'La placa es requerida'
-        if (value.length < 3) return 'La placa debe tener al menos 3 caracteres'
-        if (!/^[A-Z0-9-]+$/i.test(value)) return 'La placa solo puede contener letras, números y guiones'
+        if (typeof value === 'string') {
+          if (!value.trim()) return 'La placa es requerida'
+          if (value.length < 3) return 'La placa debe tener al menos 3 caracteres'
+          if (!/^[A-Z0-9-]+$/i.test(value)) return 'La placa solo puede contener letras, números y guiones'
+        }
         break
       
-      case 'vehicleType':
-        if (!value) return 'El tipo de vehículo es requerido'
-        break
-      
-      case 'ownerEmail':
-        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          return 'El email no es válido'
+      case 'vehicleTypeId':
+        if (typeof value === 'number') {
+          if (!value || value <= 0) return 'El tipo de vehículo es requerido'
         }
         break
       
       case 'ownerPhone':
-        if (value && !/^\+?[\d\s-()]+$/.test(value)) {
+        if (typeof value === 'string' && value && !/^\+?[\d\s-()]+$/.test(value)) {
           return 'El teléfono no es válido'
         }
         break
@@ -166,7 +165,7 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({
   // ==========================================
   // MANEJADORES DE EVENTOS
   // ==========================================
-  const handleInputChange = (name: keyof FormData, value: string) => {
+  const handleInputChange = (name: keyof FormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [name]: value }))
     
     // Validar en tiempo real si el campo ya fue tocado
@@ -193,27 +192,27 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({
       if (mode === 'create') {
         const request: CreateVehicleRequest = {
           licensePlate: formData.licensePlate.toUpperCase(),
-          vehicleType: formData.vehicleType,
+          vehicleTypeId: formData.vehicleTypeId,
           brand: formData.brand || undefined,
           model: formData.model || undefined,
           color: formData.color || undefined,
           ownerName: formData.ownerName || undefined,
           ownerPhone: formData.ownerPhone || undefined,
-          ownerEmail: formData.ownerEmail || undefined
         }
+        console.log('📤 Datos a enviar (CREATE):', request)
         await createVehicle(request)
       } else if (vehicle) {
         const request: UpdateVehicleRequest = {
           id: vehicle.id,
-          licensePlate: formData.licensePlate.toUpperCase(),
-          vehicleType: formData.vehicleType,
+          // NOTA: licensePlate NO se puede cambiar en actualizaciones (inmutable)
+          vehicleTypeId: formData.vehicleTypeId,
           brand: formData.brand || undefined,
           model: formData.model || undefined,
           color: formData.color || undefined,
           ownerName: formData.ownerName || undefined,
           ownerPhone: formData.ownerPhone || undefined,
-          ownerEmail: formData.ownerEmail || undefined
         }
+        console.log('📤 Datos a enviar (UPDATE):', request)
         await updateVehicle(request)
       }
       
@@ -227,37 +226,26 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({
   const handleClose = () => {
     setFormData({
       licensePlate: '',
-      vehicleType: 'CAR',
+      vehicleTypeId: 1,
       brand: '',
       model: '',
       color: '',
       ownerName: '',
-      ownerPhone: '',
-      ownerEmail: ''
+      ownerPhone: ''
     })
     setErrors({})
     setTouched({
       licensePlate: false,
-      vehicleType: false,
+      vehicleTypeId: false,
       brand: false,
       model: false,
       color: false,
       ownerName: false,
-      ownerPhone: false,
-      ownerEmail: false
+      ownerPhone: false
     })
     clearError()
     onClose()
   }
-
-  // ==========================================
-  // OPCIONES DE TIPO DE VEHÍCULO
-  // ==========================================
-  const vehicleTypeOptions = [
-    { value: 'CAR', label: 'Automóvil' },
-    { value: 'MOTORCYCLE', label: 'Motocicleta' },
-    { value: 'TRUCK', label: 'Camión' }
-  ]
 
   // ==========================================
   // RENDER
@@ -304,9 +292,14 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({
                 onChange={(e) => handleInputChange('licensePlate', e.target.value.toUpperCase())}
                 onBlur={() => handleInputBlur('licensePlate')}
                 error={errors.licensePlate}
-                disabled={isLoading}
+                disabled={isLoading || mode === 'edit'} // Deshabilitar en modo edición
                 className="font-mono"
               />
+              {mode === 'edit' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  La placa no se puede modificar
+                </p>
+              )}
             </div>
 
             {/* Tipo de Vehículo */}
@@ -315,20 +308,20 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({
                 Tipo de Vehículo *
               </label>
               <select
-                value={formData.vehicleType}
-                onChange={(e) => handleInputChange('vehicleType', e.target.value as VehicleType)}
-                onBlur={() => handleInputBlur('vehicleType')}
+                value={formData.vehicleTypeId}
+                onChange={(e) => handleInputChange('vehicleTypeId', Number(e.target.value))}
+                onBlur={() => handleInputBlur('vehicleTypeId')}
                 disabled={isLoading}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
-                {vehicleTypeOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {vehicleTypes.map(type => (
+                  <option key={type.id} value={type.id}>
+                    {type.name} - {type.description}
                   </option>
                 ))}
               </select>
-              {errors.vehicleType && (
-                <p className="mt-1 text-sm text-red-600">{errors.vehicleType}</p>
+              {errors.vehicleTypeId && (
+                <p className="mt-1 text-sm text-red-600">{errors.vehicleTypeId}</p>
               )}
             </div>
 
@@ -394,7 +387,7 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({
             </div>
 
             {/* Teléfono */}
-            <div className="md:col-span-1">
+            <div className="md:col-span-2">
               <Input
                 label="Teléfono"
                 placeholder="+57 300 123 4567"
@@ -402,20 +395,6 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({
                 onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
                 onBlur={() => handleInputBlur('ownerPhone')}
                 error={errors.ownerPhone}
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* Email */}
-            <div className="md:col-span-1">
-              <Input
-                label="Email"
-                type="email"
-                placeholder="juan@ejemplo.com"
-                value={formData.ownerEmail}
-                onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
-                onBlur={() => handleInputBlur('ownerEmail')}
-                error={errors.ownerEmail}
                 disabled={isLoading}
               />
             </div>
