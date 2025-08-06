@@ -18,6 +18,9 @@ interface SessionFormProps {
 
 // Tarifas por hora según tipo de vehículo
 const HOURLY_RATES = {
+  AUTO: 3000,
+  MOTOCICLETA: 2000,
+  // Compatibilidad con nombres anteriores
   CAR: 3000,
   MOTORCYCLE: 2000,
   TRUCK: 5000
@@ -93,7 +96,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
 
     try {
       await startSession({
-        vehicleLicensePlate: selectedVehicle?.licensePlate || '',
+        licensePlate: selectedVehicle?.licensePlate || '',
         parkingSpot: parkingSpot || undefined,
         notes: useCustomRate && customRate ? `Tarifa personalizada: ${formatCurrency(Number(customRate))}/hora` : undefined
       })
