@@ -19,7 +19,7 @@ export interface User {
   email: string
   firstName: string
   lastName: string
-  role: 'ADMIN' | 'OPERATOR' | 'USER' | 'CUSTOMER'
+  role: 'ADMIN' | 'OPERATOR'
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -70,27 +70,26 @@ export interface AuthState {
 // ==========================================
 export interface Vehicle extends BaseEntity {
   licensePlate: string;
-  vehicleType: VehicleType;
+  vehicleTypeId: number;        // Campo del backend
+  vehicleType: VehicleType;     // Campo calculado para compatibilidad con UI
   brand?: string;
   model?: string;
   color?: string;
   ownerName?: string;
   ownerPhone?: string;
-  ownerEmail?: string;
   isActive: boolean;
 }
 
-export type VehicleType = 'CAR' | 'MOTORCYCLE' | 'TRUCK';
+export type VehicleType = 'AUTO' | 'MOTOCICLETA';
 
 export interface CreateVehicleRequest {
   licensePlate: string;
-  vehicleType: VehicleType;
+  vehicleTypeId: number;
   brand?: string;
   model?: string;
   color?: string;
   ownerName?: string;
   ownerPhone?: string;
-  ownerEmail?: string;
 }
 
 export interface UpdateVehicleRequest extends Partial<CreateVehicleRequest> {
@@ -98,35 +97,65 @@ export interface UpdateVehicleRequest extends Partial<CreateVehicleRequest> {
 }
 
 // ==========================================
-// TIPOS DE SESIONES DE PARQUEO
+// TIPOS DE SESIONES DE PARQUEO (HÍBRIDO - COMPATIBILIDAD)
 // ==========================================
 export interface ParkingSession extends BaseEntity {
   id: string;
-  vehicle: Vehicle;
+  ticketCode?: string;              // ✅ Nuevo campo de API
+  vehicleId?: string;               // ✅ Nuevo campo de API
+  parkingSpaceId?: string;          // ✅ Nuevo campo de API
+  licensePlate?: string;            // ✅ Nuevo campo de API
+  vehicleType?: VehicleType;        // ✅ Nuevo campo de API
+  spaceNumber?: string;             // ✅ Nuevo campo de API
+  
+  // Campos requeridos por la API actual
+  vehicle: Vehicle;                 // ✅ Requerido - contiene datos del vehículo
   entryTime: string;
   exitTime?: string;
-  status: SessionStatus;
-  parkingSpot?: string;
-  rate: number;
-  totalAmount?: number;
-  payment?: Payment;
-  operator: User;
-  notes?: string;
+  status: SessionStatus;            // ✅ Requerido - estado de la sesión
+  isActive?: boolean;               // ✅ Nuevo campo de API
+  parkingSpot?: string;             // 🔄 Legacy - migrar a spaceNumber
+  rate: number;                     // ✅ Requerido - tarifa por hora
+  totalAmount?: number;             // 🔄 Legacy - calcular dinámicamente
+  payment?: Payment;                // 🔄 Legacy - migrar a payment service
+  operator?: User;                  // 🔄 Legacy - no en API response
+  notes?: string;                   // 🔄 Legacy - no en API response
+  
+  // Campos nuevos para cálculos
+  duration?: string;                // ✅ Calculado
+  calculatedAmount?: number;        // ✅ Del payment service
 }
 
 export type SessionStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 
 export interface StartSessionRequest {
-  vehicleLicensePlate: string;
-  parkingSpot?: string;
-  notes?: string;
+  licensePlate: string;             // ✅ Alineado con API real
+  
+  // Campos legacy (ignorados por API)
+  vehicleLicensePlate?: string;     // 🔄 Legacy - usar licensePlate
+  parkingSpot?: string;             // 🔄 Legacy - no usado por API
+  notes?: string;                   // 🔄 Legacy - no usado por API
 }
 
 export interface EndSessionRequest {
-  sessionId: string;
+  sessionId: string;                // ✅ Requerido por componente
+  licensePlate: string;             // ✅ Alineado con API real
+  exitTime: string;                 // ✅ Requerido por componente
+  paymentMethod: PaymentMethod;     // ✅ Requerido por componente
+  notes?: string;                   // ✅ Opcional
+}
+
+export interface EndSessionResponse {
+  sessionId: number;
+  vehicleId: number;
+  entryTime: string;
   exitTime: string;
-  paymentMethod: PaymentMethod;
-  notes?: string;
+  duration: string;
+  calculatedAmount: number;
+  parkingSpace: {
+    spaceNumber: string;
+    isOccupied: boolean;
+  };
 }
 
 // ==========================================
@@ -138,7 +167,7 @@ export interface Payment extends BaseEntity {
   status: PaymentStatus;
   transactionId?: string;
   parkingSession: ParkingSession;
-  processedBy: User;
+  processedBy?: User;               // ✅ Opcional mientras no hay autenticación completa
   processedAt: string;
   notes?: string;
 }
