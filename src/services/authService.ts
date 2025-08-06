@@ -4,6 +4,7 @@
 import { apiService } from './api';
 import { API_CONFIG } from '../constants';
 import type { User, LoginCredentials } from '../types';
+import { PERMISSIONS_MATRIX } from '../types/auth';
 
 // ==========================================
 // TIPOS ESPECÍFICOS PARA AUTENTICACIÓN
@@ -83,7 +84,7 @@ export class AuthService {
         email: profileResponse.email,
         firstName: profileResponse.firstname || profileResponse.firstName || '',
         lastName: profileResponse.lastname || profileResponse.lastName || '',
-        role: profileResponse.role,
+        role: (profileResponse.role === 'CUSTOMER') ? 'OPERATOR' : profileResponse.role as 'ADMIN' | 'OPERATOR',
         isActive: true,
         createdAt: profileResponse.createdAt,
         updatedAt: profileResponse.createdAt,
@@ -158,7 +159,7 @@ export class AuthService {
             email: 'customer@parking.com',
             firstName: 'Cliente',
             lastName: 'Demo',
-            role: 'CUSTOMER',
+            role: 'OPERATOR', // Cambiamos CUSTOMER por OPERATOR
             isActive: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -243,7 +244,7 @@ export class AuthService {
         email: response.email,
         firstName: response.firstname || response.firstName || '',
         lastName: response.lastname || response.lastName || '',
-        role: response.role,
+        role: (response.role === 'CUSTOMER') ? 'OPERATOR' : response.role as 'ADMIN' | 'OPERATOR',
         isActive: true,
         createdAt: response.createdAt,
         updatedAt: response.createdAt,
@@ -270,6 +271,106 @@ export class AuthService {
   hasValidSession(): boolean {
     const token = this.getCurrentToken();
     return !!token;
+  }
+
+  // ==========================================
+  // SISTEMA DE PERMISOS
+  // ==========================================
+  hasPermission(permission: string, currentUser?: User): boolean {
+    const user = currentUser || this.getCurrentUserFromStorage();
+    
+    if (!user) return false;
+
+    // Admin tiene todos los permisos
+    if (user.role === 'ADMIN') {
+      return true;
+    }
+
+    // Verificar en la matriz de permisos
+    const allowedRoles = PERMISSIONS_MATRIX[permission];
+    const hasAccess = allowedRoles?.includes(user.role) || false;
+    console.log('🔍 Verificando matriz:', { permission, allowedRoles, userRole: user.role, hasAccess });
+    
+    return hasAccess;
+  }
+
+  hasAnyPermission(permissions: string[], currentUser?: User): boolean {
+    return permissions.some(permission => this.hasPermission(permission, currentUser));
+  }
+
+  hasRole(role: string, currentUser?: User): boolean {
+    const user = currentUser || this.getCurrentUserFromStorage();
+    return user?.role === role;
+  }
+
+  canDeleteVehicles(currentUser?: User): boolean {
+    return this.hasPermission('vehicles:delete', currentUser);
+  }
+
+  canManageUsers(currentUser?: User): boolean {
+    return this.hasPermission('config:users', currentUser);
+  }
+
+  canViewReports(currentUser?: User): boolean {
+    return this.hasPermission('reports:revenue', currentUser);
+  }
+
+  // ==========================================
+  // OBTENER USUARIO ACTUAL DESDE STORAGE
+  // ==========================================
+  getCurrentUserFromStorage(): User | null {
+    // Por simplicidad, extraemos del token o storage local
+    // En un escenario real esto vendría del token JWT decodificado
+    const token = this.getCurrentToken();
+    if (!token) return null;
+
+    // Demo usuarios basados en el token
+    if (token === 'demo-jwt-token-admin') {
+      return {
+        id: '1',
+        email: 'admin@parking.com',
+        firstName: 'Admin',
+        lastName: 'Sistema',
+        role: 'ADMIN',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    if (token === 'demo-jwt-token-operator') {
+      return {
+        id: '2',
+        email: 'operator@parking.com',
+        firstName: 'Juan',
+        lastName: 'Operador',
+        role: 'OPERATOR',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    if (token === 'demo-jwt-token-customer') {
+      return {
+        id: '3',
+        email: 'customer@parking.com',
+        firstName: 'Cliente',
+        lastName: 'Demo',
+        role: 'OPERATOR', // Cambiamos por OPERATOR ya que no hay CUSTOMER
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    // Fallback para tokens reales del backend
+    try {
+      // En producción aquí decodificarías el JWT
+      return null;
+    } catch {
+      return null;
+    }
   }
 }
 
