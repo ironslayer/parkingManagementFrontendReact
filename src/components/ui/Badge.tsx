@@ -171,24 +171,31 @@ Badge.displayName = 'Badge';
 /**
  * Badge para mostrar estado de vehículos
  */
-export const VehicleTypeBadge: React.FC<{ type: 'CAR' | 'MOTORCYCLE' | 'TRUCK' }> = ({ type }) => {
+export const VehicleTypeBadge: React.FC<{ type: 'AUTO' | 'MOTOCICLETA' | 'CAR' | 'MOTORCYCLE' | 'TRUCK' }> = ({ type }) => {
   const getVariantAndText = (vehicleType: string) => {
     switch (vehicleType) {
+      case 'AUTO':
       case 'CAR':
-        return { variant: 'primary' as const, text: 'Automóvil' };
+        return { variant: 'primary' as const, text: 'Automóvil', icon: '🚗' }
+      case 'MOTOCICLETA':
       case 'MOTORCYCLE':
-        return { variant: 'warning' as const, text: 'Motocicleta' };
+        return { variant: 'secondary' as const, text: 'Motocicleta', icon: '🏍️' }
       case 'TRUCK':
-        return { variant: 'info' as const, text: 'Camioneta' };
+        return { variant: 'warning' as const, text: 'Camión', icon: '🚛' }
       default:
-        return { variant: 'default' as const, text: 'Desconocido' };
+        return { variant: 'default' as const, text: vehicleType, icon: '🚗' }
     }
-  };
+  }
 
-  const { variant, text } = getVariantAndText(type);
+  const { variant, text, icon } = getVariantAndText(type)
   
-  return <Badge variant={variant} size="sm">{text}</Badge>;
-};
+  return (
+    <Badge variant={variant} className="inline-flex items-center gap-1 font-medium">
+      <span>{icon}</span>
+      {text}
+    </Badge>
+  )
+}
 
 /**
  * Badge para mostrar estado de sesiones
