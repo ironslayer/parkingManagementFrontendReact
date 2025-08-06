@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react'
 import { Plus, Edit, Car } from 'lucide-react'
 import type { Vehicle, VehicleType } from '../../types'
 import { useVehicleStore } from '../../store/vehicleStore'
-import { Button, Table, VehicleTypeBadge, LoadingSpinner, ToggleSwitch } from '../ui'
+import { Button, VehicleTypeBadge, LoadingSpinner, ToggleSwitch } from '../ui'
+import { ResponsiveTable } from '../ui/ResponsiveTable'
 import { useAuth } from '../../hooks/useAuth'
-import type { TableColumn } from '../ui'
+import { RESPONSIVE_CLASSES, useScreenSize } from '../../utils/responsive'
+import type { ResponsiveTableColumn } from '../ui/ResponsiveTable'
 
 // ==========================================
 // TIPOS DEL COMPONENTE
@@ -48,6 +50,7 @@ export const VehicleList: React.FC<VehicleListProps> = ({
   } = useVehicleStore()
 
   const { isAdmin } = useAuth() // Para verificar si puede cambiar estados
+  const { isMobile } = useScreenSize() // Para responsive
 
   const [filters, setFilters] = useState<VehicleFilters>({})
   const [currentPage, setCurrentPage] = useState(1)
@@ -136,7 +139,6 @@ export const VehicleList: React.FC<VehicleListProps> = ({
   // PAGINACIÓN
   // ==========================================
   const totalItems = filteredAndSortedVehicles.length
-  const totalPages = Math.ceil(totalItems / pageSize)
   const startIndex = (currentPage - 1) * pageSize
   const endIndex = startIndex + pageSize
   const paginatedVehicles = filteredAndSortedVehicles.slice(startIndex, endIndex)
@@ -176,14 +178,15 @@ export const VehicleList: React.FC<VehicleListProps> = ({
   }))
 
   // ==========================================
-  // CONFIGURACIÓN DE COLUMNAS
+  // CONFIGURACIÓN DE COLUMNAS RESPONSIVE
   // ==========================================
-  const columns: TableColumn<typeof tableData[0]>[] = [
+  const columns: ResponsiveTableColumn<typeof tableData[0]>[] = [
     {
       key: 'licensePlate',
       label: 'Placa',
       sortable: true,
-      render: (value) => (
+      priority: 'high',
+      render: (value: unknown) => (
         <div className="font-mono font-semibold text-blue-600">
           {String(value)}
         </div>
@@ -193,25 +196,32 @@ export const VehicleList: React.FC<VehicleListProps> = ({
       key: 'vehicleType',
       label: 'Tipo',
       sortable: true,
-      render: (value) => (
+      priority: 'high',
+      hideOnMobile: false,
+      render: (value: unknown) => (
         <VehicleTypeBadge type={value as VehicleType} />
       )
     },
     {
       key: 'brand',
       label: 'Marca',
-      sortable: true
+      sortable: true,
+      priority: 'medium',
+      hideOnMobile: true
     },
     {
       key: 'model',
       label: 'Modelo',
-      sortable: true
+      sortable: true,
+      priority: 'medium',
+      hideOnMobile: true
     },
     {
       key: 'isActive',
       label: 'Estado',
       sortable: true,
-      render: (value) => {
+      priority: 'high',
+      render: (value: unknown) => {
         const isActive = value as boolean;
         return (
           <span
@@ -230,12 +240,18 @@ export const VehicleList: React.FC<VehicleListProps> = ({
       {
         key: 'ownerName' as keyof typeof tableData[0],
         label: 'Propietario',
-        sortable: true
+        sortable: true,
+        priority: 'low' as const,
+        hideOnMobile: true,
+        hideOnTablet: true
       },
       {
         key: 'createdAt' as keyof typeof tableData[0],
         label: 'Fecha Registro',
         sortable: true,
+        priority: 'low' as const,
+        hideOnMobile: true,
+        hideOnTablet: true,
         render: (value: unknown) => {
           const date = value as string
           return new Date(date).toLocaleDateString('es-ES', {
@@ -250,6 +266,7 @@ export const VehicleList: React.FC<VehicleListProps> = ({
       {
         key: 'actions' as keyof typeof tableData[0],
         label: 'Acciones',
+        priority: 'high' as const,
         align: 'center' as const,
         width: '120px',
         render: (_: unknown, row: typeof tableData[0]) => {
@@ -267,7 +284,7 @@ export const VehicleList: React.FC<VehicleListProps> = ({
                   leftIcon={<Edit className="w-3 h-3" />}
                   className="h-8 px-2"
                 >
-                  Editar
+                  <span className="hidden sm:inline">Editar</span>
                 </Button>
               )}
               
@@ -289,7 +306,7 @@ export const VehicleList: React.FC<VehicleListProps> = ({
                     disabled={isLoading}
                     loading={isLoading}
                   />
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-gray-600 hidden lg:inline">
                     {vehicle.isActive ? 'Activo' : 'Inactivo'}
                   </span>
                 </div>
@@ -315,15 +332,15 @@ export const VehicleList: React.FC<VehicleListProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header Responsive */}
       {!compact && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className={RESPONSIVE_CLASSES.flexResponsive}>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Car className="w-6 h-6 text-blue-600" />
-              Gestión de Vehículos
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Car className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+              <span className="hidden sm:inline">Gestión de </span>Vehículos
             </h2>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
               Administra los vehículos registrados en el sistema
             </p>
           </div>
@@ -332,9 +349,10 @@ export const VehicleList: React.FC<VehicleListProps> = ({
             <Button
               onClick={onCreateVehicle}
               leftIcon={<Plus className="w-4 h-4" />}
-              className="whitespace-nowrap"
+              className="w-full sm:w-auto whitespace-nowrap"
+              size={isMobile ? 'md' : 'md'}
             >
-              Agregar Vehículo
+              <span className="hidden sm:inline">Agregar </span>Vehículo
             </Button>
           )}
         </div>
@@ -372,30 +390,22 @@ export const VehicleList: React.FC<VehicleListProps> = ({
       )}
 
       {/* Vehicle Table */}
-      <Table
+            {/* Responsive Table */}
+      <ResponsiveTable
         columns={columns}
         data={tableData}
         loading={isLoading}
-        emptyMessage="No hay vehículos registrados. Comienza agregando un nuevo vehículo."
-        onRowClick={(row) => onViewVehicle?.(row.originalVehicle)}
-        searchable={searchable}
-        searchPlaceholder="Buscar por placa, marca, modelo o propietario..."
-        onSearch={handleSearch}
+        emptyMessage="No se encontraron vehículos"
+        onRowClick={(row: typeof tableData[0]) => onViewVehicle?.(row.originalVehicle)}
         onSort={handleSort}
-        actions={
-          compact && onCreateVehicle ? (
-            <Button
-              size="sm"
-              onClick={onCreateVehicle}
-              leftIcon={<Plus className="w-4 h-4" />}
-            >
-              Agregar
-            </Button>
-          ) : undefined
-        }
+        searchable={searchable}
+        searchPlaceholder="Buscar por placa, marca, modelo..."
+        onSearch={handleSearch}
+        mobileCardMode={true}
+        getRowId={(row) => row.id}
         pagination={{
           currentPage,
-          totalPages,
+          totalPages: Math.ceil(totalItems / pageSize),
           pageSize,
           totalItems,
           onPageChange: handlePageChange,
