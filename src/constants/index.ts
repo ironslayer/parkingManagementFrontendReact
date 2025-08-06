@@ -48,7 +48,8 @@ export const API_CONFIG = {
     VEHICLES: {
       BASE: '/vehicles',
       BY_ID: (id: string) => `/vehicles/${id}`,
-      BY_PLATE: (plate: string) => `/vehicles/plate/${plate}`,
+      SEARCH: '/vehicles/search',
+      BY_PLATE: (plate: string) => `/vehicles/by-plate/${plate}`,
     },
     
     // Sesiones de parqueo
@@ -65,12 +66,15 @@ export const API_CONFIG = {
     PAYMENTS: {
       BASE: '/payments',
       BY_ID: (id: string) => `/payments/${id}`,
+      BY_SESSION: (sessionId: string) => `/payments/by-session/${sessionId}`,
       CALCULATE: '/payments/calculate',
       PROCESS: '/payments/process',
+      CANCEL: (id: string) => `/payments/${id}/cancel`,
     },
     
     // Dashboard
     DASHBOARD: {
+      SUMMARY: '/dashboard/summary',
       STATS: '/dashboard/stats',
       OCCUPANCY_HISTORY: '/dashboard/occupancy-history',
       REVENUE_REPORT: '/dashboard/revenue-report',
@@ -81,14 +85,25 @@ export const API_CONFIG = {
     
     // Configuración
     VEHICLE_TYPES: '/vehicle-types',
-    PARKING_SPACES: '/parking-spaces',
-    RATE_CONFIGS: '/rate-configs',
+    PARKING_SPACES: {
+      BASE: '/parking-spaces',
+      AVAILABLE: '/parking-spaces/available',
+      STATUS: '/parking-spaces/status',
+      OCCUPY: (id: string) => `/parking-spaces/${id}/occupy`,
+      FREE: (id: string) => `/parking-spaces/${id}/free`,
+    },
+    RATE_CONFIGS: {
+      BASE: '/rate-configs',
+      BY_ID: (id: string) => `/rate-configs/${id}`,
+      BY_VEHICLE_TYPE: (vehicleTypeId: string) => `/rate-configs/by-vehicle-type/${vehicleTypeId}`,
+    },
     
     // Reportes
     REPORTS: {
-      DAILY: '/reports/daily',
-      MONTHLY: '/reports/monthly',
+      OCCUPANCY: '/reports/occupancy',
+      OCCUPANCY_RANGE: '/reports/occupancy/range',
       REVENUE: '/reports/revenue',
+      REVENUE_RANGE: '/reports/revenue/range',
     },
   },
 } as const;
@@ -156,11 +171,11 @@ export const APP_CONFIG = {
     LOCALE: 'es-CO',
   },
   
-  // Configuración de tarifas (ejemplo)
+  // Configuración de tarifas (según documentación backend)
   PRICING: {
-    CAR_HOURLY_RATE: 2000,
-    MOTORCYCLE_HOURLY_RATE: 1000,
-    TRUCK_HOURLY_RATE: 3000,
+    CAR_HOURLY_RATE: 10000,      // AUTO - $10,000/hora
+    MOTORCYCLE_HOURLY_RATE: 5000, // MOTOCICLETA - $5,000/hora
+    TRUCK_HOURLY_RATE: 10000,    // TRUCK usa AUTO por defecto
   },
 } as const;
 
