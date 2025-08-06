@@ -21,3 +21,9 @@ export { Modal, ModalHeader, ModalFooter } from './Modal';
 
 export { Table } from './Table';
 export type { TableProps, TableColumn, PaginationProps } from './Table';
+
+export { ToggleSwitch } from './ToggleSwitch';
+export type { ToggleSwitchProps } from './ToggleSwitch';
+
+// Componentes de autenticación y permisos
+export { PermissionGate, AdminOnly, StaffOnly, CanDeleteVehicles, CanManageUsers, CanProcessPayments } from '../auth/PermissionGate';
