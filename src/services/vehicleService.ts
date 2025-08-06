@@ -8,6 +8,7 @@ import type { Vehicle, CreateVehicleRequest, UpdateVehicleRequest, VehicleType }
 // ==========================================
 // TIPOS PARA RESPUESTAS DE API
 // ==========================================
+
 export interface VehicleApiResponse {
   id: number;
   licensePlate: string;
