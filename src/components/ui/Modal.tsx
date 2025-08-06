@@ -23,10 +23,10 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null
 
   const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl'
+    sm: 'max-w-sm sm:max-w-md',
+    md: 'max-w-md sm:max-w-lg',
+    lg: 'max-w-lg sm:max-w-2xl',
+    xl: 'max-w-xl sm:max-w-4xl'
   }
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -37,27 +37,28 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center bg-black bg-opacity-50"
       onClick={handleBackdropClick}
     >
       <div 
         className={cn(
-          'bg-white rounded-lg shadow-xl w-full transform transition-all',
+          'bg-white rounded-t-lg sm:rounded-lg shadow-xl w-full transform transition-all',
+          'max-h-[90vh] overflow-hidden flex flex-col',
           sizeClasses[size]
         )}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
             {title && (
-              <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{title}</h2>
             )}
             {showCloseButton && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="p-1"
+                className="p-1 ml-2"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -66,7 +67,7 @@ export const Modal: React.FC<ModalProps> = ({
         )}
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
           {children}
         </div>
       </div>
