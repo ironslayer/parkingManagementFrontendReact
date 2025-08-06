@@ -155,31 +155,29 @@ function App() {
 
   const Sidebar = ({ mobile = false }) => (
     <div className={`flex flex-col ${mobile ? 'w-64 h-full' : 'flex-1 min-h-0'} bg-white ${mobile ? '' : 'border-r border-gray-200'}`}>
-      <div className="flex items-center justify-center h-16 px-4 bg-blue-600">
-        <h1 className="text-xl font-semibold text-white">ParkingApp</h1>
+      <div className="flex items-center justify-center h-14 sm:h-16 px-4 bg-blue-600">
+        <h1 className="text-lg sm:text-xl font-bold text-white">ParkingApp</h1>
       </div>
-      <nav className="flex-1 px-4 py-6 space-y-2">
-        {navigationItems.map(item => {
-          if (!item.show) return null
-          const Icon = item.icon
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleNavigation(item.id)}
-              className={`w-full flex items-center px-3 py-2 text-left rounded-lg transition-colors ${
-                currentPage === item.id 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Icon className="w-5 h-5 mr-3" />
-              {item.label}
-            </button>
-          )
-        })}
+      <nav className="flex-1 px-3 sm:px-4 py-4 sm:py-6 space-y-1 sm:space-y-2 overflow-y-auto">
+        {navigationItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => handleNavigation(item.id)}
+            className={`w-full flex items-center px-2 sm:px-3 py-2 sm:py-2.5 text-left rounded-lg transition-colors text-sm sm:text-base ${
+              currentPage === item.id
+                ? 'bg-blue-100 text-blue-900 font-medium'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <span className="mr-2 sm:mr-3 flex-shrink-0">
+              <item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+            </span>
+            <span className="truncate">{item.label}</span>
+          </button>
+        ))}
       </nav>
     </div>
-  )
+  );
 
   const DashboardContent = () => (
     <div className="min-h-screen bg-gray-50">
@@ -208,7 +206,7 @@ function App() {
         </main>
       </div>
     </div>
-  )
+  );
 
   return (
     <ProtectedRoute>
