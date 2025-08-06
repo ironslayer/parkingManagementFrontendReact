@@ -115,10 +115,48 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
 
             {/* Demo credentials */}
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-xs text-gray-500 mb-2">Credenciales de demostración:</p>
-              <div className="text-xs text-gray-600 space-y-1">
-                <p><strong>Admin:</strong> admin@parking.com / admin123</p>
-                <p><strong>Operador:</strong> operador@parking.com / op123</p>
+              <p className="text-xs text-gray-500 mb-3">Credenciales de demostración:</p>
+              
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEmail('admin@parking.com')
+                    setPassword('admin123')
+                  }}
+                  disabled={isLoading}
+                  className="w-full text-xs"
+                >
+                  🔑 Admin (Todos los permisos)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEmail('operator@parking.com')
+                    setPassword('operator123')
+                  }}
+                  disabled={isLoading}
+                  className="w-full text-xs"
+                >
+                  👨‍💼 Operador (Sin eliminar vehículos)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEmail('customer@parking.com')
+                    setPassword('customer123')
+                  }}
+                  disabled={isLoading}
+                  className="w-full text-xs"
+                >
+                  �‍💼 Operador 2 (Mismo que operador)
+                </Button>
               </div>
             </div>
           </CardContent>
