@@ -34,6 +34,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (requiredRole) {
     const roleHierarchy = {
       'USER': 1,
+      'CUSTOMER': 1,    // CUSTOMER es equivalente a USER
       'OPERATOR': 2,
       'ADMIN': 3
     }
