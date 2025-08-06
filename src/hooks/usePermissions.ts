@@ -4,15 +4,14 @@ import { useAuthStore } from '../store/authStore'
 export const usePermissions = () => {
   const { user } = useAuthStore()
 
-  const hasRole = (role: 'ADMIN' | 'OPERATOR' | 'USER') => {
+  const hasRole = (role: 'ADMIN' | 'OPERATOR') => {
     if (!user) return false
 
     const roleHierarchy = {
-      'USER': 1,
-      'OPERATOR': 2,
-      'ADMIN': 3
+      'OPERATOR': 1,
+      'ADMIN': 2
     }
-
+  
     const userRoleLevel = roleHierarchy[user.role]
     const requiredRoleLevel = roleHierarchy[role]
 
@@ -31,7 +30,6 @@ export const usePermissions = () => {
     canViewReports,
     canManagePayments,
     isAdmin: user?.role === 'ADMIN',
-    isOperator: user?.role === 'OPERATOR',
-    isUser: user?.role === 'USER'
+    isOperator: user?.role === 'OPERATOR'
   }
 }
