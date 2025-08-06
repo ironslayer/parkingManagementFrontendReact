@@ -270,18 +270,18 @@ export const SessionList: React.FC<SessionListProps> = ({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="font-mono font-semibold text-blue-600">
-                          {session.vehicle.licensePlate}
+                          {session.vehicle?.licensePlate || 'N/A'}
                         </span>
                         <div className="flex items-center gap-2 mt-1">
-                          <VehicleTypeBadge type={session.vehicle.vehicleType} />
+                          <VehicleTypeBadge type={session.vehicle?.vehicleType || 'AUTO'} />
                           <span className="text-xs text-gray-500">
-                            {session.vehicle.brand} {session.vehicle.model}
+                            {session.vehicle?.brand || 'N/A'} {session.vehicle?.model || 'N/A'}
                           </span>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <SessionStatusBadge status={session.status} />
+                      <SessionStatusBadge status={session.status || 'ACTIVE'} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
@@ -310,7 +310,7 @@ export const SessionList: React.FC<SessionListProps> = ({
                           {formatCurrency(getCurrentCost(session))}
                         </span>
                         <span className="text-xs text-gray-500">
-                          {formatCurrency(session.rate)}/hora
+                          {formatCurrency(session.rate || 0)}/hora
                         </span>
                       </div>
                     </td>
@@ -430,7 +430,7 @@ export const SessionList: React.FC<SessionListProps> = ({
           <p className="text-gray-600">
             ¿Estás seguro de que deseas cancelar la sesión del vehículo{' '}
             <span className="font-mono font-semibold text-blue-600">
-              {sessionToCancel?.vehicle.licensePlate}
+              {sessionToCancel?.vehicle?.licensePlate || 'N/A'}
             </span>
             ?
           </p>
