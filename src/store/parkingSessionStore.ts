@@ -27,9 +27,12 @@ interface ParkingSessionState {
 
 // Configuración de tarifas por tipo de vehículo (por hora)
 const PARKING_RATES = {
-  CAR: 2000,        // $2000 COP por hora
-  MOTORCYCLE: 1000, // $1000 COP por hora  
-  TRUCK: 3000       // $3000 COP por hora
+  AUTO: 2000,
+  MOTOCICLETA: 1000,
+  // Compatibilidad con nombres anteriores
+  CAR: 2000,
+  MOTORCYCLE: 1000,
+  TRUCK: 3000
 } as const
 
 // Simulación de API - Repository Pattern
@@ -62,13 +65,13 @@ class ParkingSessionRepository {
         vehicle: {
           id: '1',
           licensePlate: 'ABC-123',
-          vehicleType: 'CAR',
+          vehicleTypeId: 1,
+          vehicleType: 'AUTO',
           brand: 'Toyota',
           model: 'Corolla',
           color: 'Blanco',
           ownerName: 'Juan Pérez',
           ownerPhone: '+57 300 123 4567',
-          ownerEmail: 'juan@ejemplo.com',
           isActive: true,
           createdAt: '2025-08-01T08:00:00Z',
           updatedAt: '2025-08-01T08:00:00Z'
@@ -77,7 +80,7 @@ class ParkingSessionRepository {
         exitTime: '2025-08-03T14:30:00Z',
         status: 'COMPLETED',
         parkingSpot: 'A-01',
-        rate: PARKING_RATES.CAR,
+        rate: PARKING_RATES.AUTO,
         totalAmount: 9000, // 4.5 horas * 2000
         payment: {
           id: '1',
@@ -119,13 +122,13 @@ class ParkingSessionRepository {
         vehicle: {
           id: '2',
           licensePlate: 'DEF-456',
-          vehicleType: 'MOTORCYCLE',
+          vehicleTypeId: 2,
+          vehicleType: 'MOTOCICLETA',
           brand: 'Honda',
           model: 'CBR',
           color: 'Rojo',
           ownerName: 'Ana López',
           ownerPhone: '+57 301 987 6543',
-          ownerEmail: 'ana@ejemplo.com',
           isActive: true,
           createdAt: '2025-08-02T08:00:00Z',
           updatedAt: '2025-08-02T08:00:00Z'
@@ -133,7 +136,7 @@ class ParkingSessionRepository {
         entryTime: new Date().toISOString(), // Sesión activa actual
         status: 'ACTIVE',
         parkingSpot: 'M-05',
-        rate: PARKING_RATES.MOTORCYCLE,
+        rate: PARKING_RATES.MOTOCICLETA,
         operator: {
           id: '1',
           email: 'operator@parking.com',
@@ -175,7 +178,7 @@ class ParkingSessionRepository {
     
     // Verificar si ya existe una sesión activa para este vehículo
     const existingActiveSession = sessions.find(
-      session => session.vehicle.licensePlate === sessionData.vehicleLicensePlate && 
+      session => session.vehicle?.licensePlate === sessionData.vehicleLicensePlate && 
                  session.status === 'ACTIVE'
     )
     
@@ -184,7 +187,7 @@ class ParkingSessionRepository {
     }
 
     // Buscar el vehículo (simulado - en realidad vendría de vehicleStore)
-    const vehicleData = this.getVehicleByPlate(sessionData.vehicleLicensePlate)
+    const vehicleData = this.getVehicleByPlate(sessionData.vehicleLicensePlate || '')
     if (!vehicleData) {
       throw new Error(`No se encontró el vehículo con placa ${sessionData.vehicleLicensePlate}`)
     }
@@ -235,29 +238,29 @@ class ParkingSessionRepository {
 
     // Calcular tiempo y costo
     const entryTime = new Date(session.entryTime)
-    const exitTime = new Date(sessionData.exitTime)
+    const exitTime = new Date(sessionData.exitTime || new Date().toISOString())
     const durationMs = exitTime.getTime() - entryTime.getTime()
     const durationHours = Math.ceil(durationMs / (1000 * 60 * 60)) // Redondear hacia arriba
-    const totalAmount = durationHours * session.rate
+    const totalAmount = durationHours * (session.rate || 0)
 
     // Crear payment
     const payment = {
       id: (sessions.length + 10).toString(),
       amount: totalAmount,
-      paymentMethod: sessionData.paymentMethod,
+      paymentMethod: sessionData.paymentMethod || 'CASH',
       status: 'COMPLETED' as const,
       transactionId: `TXN-${Date.now()}`,
       parkingSession: session,
       processedBy: session.operator,
-      processedAt: sessionData.exitTime,
-      createdAt: sessionData.exitTime,
-      updatedAt: sessionData.exitTime
+      processedAt: sessionData.exitTime || new Date().toISOString(),
+      createdAt: sessionData.exitTime || new Date().toISOString(),
+      updatedAt: sessionData.exitTime || new Date().toISOString()
     }
 
     // Actualizar sesión
     const updatedSession: ParkingSession = {
       ...session,
-      exitTime: sessionData.exitTime,
+      exitTime: sessionData.exitTime || new Date().toISOString(),
       status: 'COMPLETED',
       totalAmount,
       payment,
@@ -307,7 +310,7 @@ class ParkingSessionRepository {
     await this.delay()
     const sessions = this.getStoredSessions()
     return sessions.find(
-      session => session.vehicle.licensePlate === licensePlate && session.status === 'ACTIVE'
+      session => session.vehicle?.licensePlate === licensePlate && session.status === 'ACTIVE'
     ) || null
   }
 
@@ -319,13 +322,13 @@ class ParkingSessionRepository {
       {
         id: '1',
         licensePlate: 'ABC-123',
-        vehicleType: 'CAR',
+        vehicleTypeId: 1,
+        vehicleType: 'AUTO',
         brand: 'Toyota',
         model: 'Corolla',
         color: 'Blanco',
         ownerName: 'Juan Pérez',
         ownerPhone: '+57 300 123 4567',
-        ownerEmail: 'juan@ejemplo.com',
         isActive: true,
         createdAt: '2025-08-01T08:00:00Z',
         updatedAt: '2025-08-01T08:00:00Z'
@@ -333,13 +336,13 @@ class ParkingSessionRepository {
       {
         id: '3',
         licensePlate: 'GHI-789',
-        vehicleType: 'TRUCK',
+        vehicleTypeId: 1,
+        vehicleType: 'AUTO',
         brand: 'Ford',
         model: 'F-150',
         color: 'Azul',
         ownerName: 'Carlos Ruiz',
         ownerPhone: '+57 302 555 7890',
-        ownerEmail: 'carlos@ejemplo.com',
         isActive: true,
         createdAt: '2025-08-02T08:00:00Z',
         updatedAt: '2025-08-02T08:00:00Z'
@@ -478,7 +481,7 @@ export const useParkingSessionStore = create<ParkingSessionState>()(
         const durationMs = currentTime.getTime() - entryTime.getTime()
         const durationHours = Math.ceil(durationMs / (1000 * 60 * 60))
         
-        return durationHours * session.rate
+        return durationHours * (session.rate || 0)
       },
 
       setCurrentSession: (session: ParkingSession | null) => {
