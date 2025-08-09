@@ -25,6 +25,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
    */
   leftIcon?: React.ReactNode;
   
+  
   /**
    * Icono que aparece después del texto
    */
@@ -119,7 +120,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {loading && (
           <span className="flex-shrink-0">
             <svg 
-              className="animate-spin h-4 w-4" 
+              className="w-4 h-4 animate-spin" 
               fill="none" 
               viewBox="0 0 24 24"
             >
