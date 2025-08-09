@@ -24,8 +24,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
    * Icono que aparece antes del texto
    */
   leftIcon?: React.ReactNode;
-  
-  
+
   /**
    * Icono que aparece después del texto
    */
