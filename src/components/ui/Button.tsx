@@ -20,6 +20,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
    */
   loading?: boolean;
   
+  
   /**
    * Icono que aparece antes del texto
    */
