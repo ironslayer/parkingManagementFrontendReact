@@ -4,6 +4,7 @@ import { Button } from '../ui/Button'
 import { Modal, ModalFooter } from '../ui/Modal'
 import { useAuthStore } from '../../store/authStore'
 import { usePermissions } from '../../hooks/usePermissions'
+import { UserProfile } from '../users/UserProfile'
 
 interface DashboardHeaderProps {
   onMenuToggle?: () => void
@@ -15,8 +16,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   title = "Dashboard"
 }) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
   const { user, logout } = useAuthStore()
-  const { isAdmin } = usePermissions()
+  const permissions = usePermissions() // Usar el nuevo hook
 
   const handleLogout = () => {
     logout()
@@ -66,7 +68,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             {/* User info - Hidden on mobile */}
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-gray-700 max-w-[120px] truncate">
-                {user?.firstName} {user?.lastName}
+                {user?.firstname} {user?.lastname}
               </p>
               <div className="flex items-center justify-end space-x-2">
                 <span 
@@ -79,14 +81,18 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
             <div className="flex items-center space-x-1 sm:space-x-2">
               {/* Settings - Solo para admin */}
-              {isAdmin && (
+              {permissions.isAdmin && (
                 <Button variant="ghost" size="sm">
                   <Settings className="h-5 w-5" />
                 </Button>
               )}
 
               {/* Profile */}
-              <Button variant="ghost" size="sm">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowProfileModal(true)}
+              >
                 <User className="h-5 w-5" />
               </Button>
 
@@ -131,6 +137,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </Button>
           </ModalFooter>
         </div>
+      </Modal>
+
+      {/* User Profile Modal */}
+      <Modal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        title=""
+        size="lg"
+        showCloseButton={false}
+      >
+        <UserProfile onClose={() => setShowProfileModal(false)} />
       </Modal>
     </>
   )
