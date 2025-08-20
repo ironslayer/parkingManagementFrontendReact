@@ -10,6 +10,7 @@ import { useAuthStore } from './store/authStore'
 import { usePermissions } from './hooks/usePermissions'
 import DashboardPage from './pages/DashboardPage'
 import VehiclesPage from './pages/VehiclesPage'
+import UsersPage from './pages/UsersPage'
 import SessionsPage from './pages/SessionsPage'
 
 type Page = 'dashboard' | 'vehicles' | 'users' | 'sessions'
@@ -50,12 +51,7 @@ function App() {
         return (
           <div className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-              <Card>
-                <CardHeader title="Gestión de Usuarios" />
-                <CardContent>
-                  <p className="text-gray-600">Esta funcionalidad se implementará en la siguiente fase.</p>
-                </CardContent>
-              </Card>
+              <UsersPage />
             </div>
           </div>
         )
