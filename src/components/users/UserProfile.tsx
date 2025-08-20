@@ -79,6 +79,7 @@ const formatDate = (dateString: string | Date): string => {
   }
 };
 
+
 const getRoleBadge = (role: string) => {
   const styles = {
     ADMIN: 'bg-purple-100 text-purple-800 border-purple-200',
@@ -211,7 +212,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
       <Card className="p-6">
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
-            <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+            <AlertCircle className="w-8 h-8 mx-auto mb-2 text-red-500" />
             <p className="text-gray-600">No se pudo cargar la información del usuario</p>
           </div>
         </div>
@@ -250,8 +251,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
         <Card className="border-red-200 bg-red-50">
           <div className="p-4">
             <div className="flex items-center">
-              <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-              <div className="text-red-600 text-sm font-medium">
+              <AlertCircle className="w-5 h-5 mr-2 text-red-600" />
+              <div className="text-sm font-medium text-red-600">
                 {error}
               </div>
               <Button
@@ -269,9 +270,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
 
       {/* User Info Card */}
       <Card className="p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <div className="flex-1">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-900">
                   {currentUser.firstName} {currentUser.lastName}
@@ -310,7 +311,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="flex -mb-px space-x-8">
           <button
             onClick={() => setActiveTab('profile')}
             className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -345,10 +346,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
       {activeTab === 'profile' && (
         <Card className="p-6">
           <form onSubmit={profileForm.handleSubmit(handleProfileSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {/* Nombre */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Nombre *
                 </label>
                 <Input
@@ -361,7 +362,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
 
               {/* Apellido */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Apellido *
                 </label>
                 <Input
@@ -375,7 +376,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
                 Email *
               </label>
               <Input
@@ -410,7 +411,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
           <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-6">
             {/* Contraseña Actual */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
                 Contraseña Actual *
               </label>
               <div className="relative">
@@ -423,7 +424,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
                 <button
                   type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute text-gray-400 transform -translate-y-1/2 right-3 top-1/2 hover:text-gray-600"
                 >
                   {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -432,7 +433,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
 
             {/* Nueva Contraseña */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
                 Nueva Contraseña *
               </label>
               <div className="relative">
@@ -445,7 +446,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute text-gray-400 transform -translate-y-1/2 right-3 top-1/2 hover:text-gray-600"
                 >
                   {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -454,7 +455,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
 
             {/* Confirmar Contraseña */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
                 Confirmar Nueva Contraseña *
               </label>
               <div className="relative">
@@ -467,7 +468,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute text-gray-400 transform -translate-y-1/2 right-3 top-1/2 hover:text-gray-600"
                 >
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -475,11 +476,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
             </div>
 
             {/* Requisitos de Contraseña */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-blue-900 mb-2">
+            <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
+              <h4 className="mb-2 text-sm font-medium text-blue-900">
                 Requisitos de la contraseña:
               </h4>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <ul className="space-y-1 text-sm text-blue-800">
                 <li>• Mínimo 8 caracteres</li>
                 <li>• Al menos una letra minúscula</li>
                 <li>• Al menos una letra mayúscula</li>
