@@ -9,6 +9,8 @@ import { User, Lock, Eye, EyeOff, Save, X, Shield, Mail, Calendar, AlertCircle }
 import { Button, Card, Input, LoadingSpinner } from '../ui';
 import { useUserStore } from '../../store/userStore';
 import { useAuthStore } from '../../store/authStore';
+import { ProfileUpdateModal } from './ProfileUpdateModal';
+import { SuccessModal } from './SuccessModal';
 
 // ==========================================
 // ESQUEMAS DE VALIDACIÓN
@@ -79,7 +81,6 @@ const formatDate = (dateString: string | Date): string => {
   }
 };
 
-
 const getRoleBadge = (role: string) => {
   const styles = {
     ADMIN: 'bg-purple-100 text-purple-800 border-purple-200',
@@ -110,12 +111,16 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [pendingProfileData, setPendingProfileData] = useState<ProfileFormData | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   // ==========================================
   // STORES
   // ==========================================
   const { updateProfile, error, clearError } = useUserStore();
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, updateUser } = useAuthStore();
 
   // ==========================================
   // FORMULARIOS
@@ -123,8 +128,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      firstname: currentUser?.firstName || '',
-      lastname: currentUser?.lastName || '',
+      firstname: currentUser?.firstname || '',
+      lastname: currentUser?.lastname || '',
       email: currentUser?.email || ''
     }
   });
@@ -144,8 +149,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
   useEffect(() => {
     if (currentUser) {
       profileForm.reset({
-        firstname: currentUser.firstName,
-        lastname: currentUser.lastName,
+        firstname: currentUser.firstname,
+        lastname: currentUser.lastname,
         email: currentUser.email
       });
     }
@@ -160,45 +165,100 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
     }
   }, [error, clearError]);
 
+  // Limpiar errores al cambiar de tab
+  useEffect(() => {
+    setPasswordError(null);
+    clearError();
+  }, [activeTab, clearError]);
+
   // ==========================================
   // HANDLERS
   // ==========================================
   const handleProfileSubmit = async (data: ProfileFormData) => {
     if (!currentUser) return;
 
+    // Guardar los datos pendientes y mostrar modal de confirmación
+    setPendingProfileData(data);
+    setShowConfirmModal(true);
+  };
+
+    const handleConfirmUpdate = async () => {
+    if (!currentUser || !pendingProfileData) return;
+
     setIsUpdatingProfile(true);
     try {
-      const updateData = {
-        firstname: data.firstname,
-        lastname: data.lastname,
-        email: data.email
-      };
-
-      await updateProfile(updateData);
+      // Crear objeto con solo los campos que cambiaron
+      const updateData: Record<string, string> = {};
       
-      // Mostrar mensaje de éxito
-      alert('Perfil actualizado correctamente');
+      if (pendingProfileData.firstname !== currentUser.firstname) {
+        updateData.firstname = pendingProfileData.firstname;
+      }
+      if (pendingProfileData.lastname !== currentUser.lastname) {
+        updateData.lastname = pendingProfileData.lastname;
+      }
+      if (pendingProfileData.email !== currentUser.email) {
+        updateData.email = pendingProfileData.email;
+      }
+
+      // Solo enviar si hay cambios
+      if (Object.keys(updateData).length > 0) {
+        await updateProfile(updateData);
+        
+        // Actualizar el usuario en el authStore también
+        const updatedUser = {
+          ...currentUser,
+          ...updateData,
+          updatedAt: new Date().toISOString()
+        };
+        updateUser(updatedUser);
+      }
+      
+      // Cerrar modal de confirmación y mostrar éxito
+      setShowConfirmModal(false);
+      setPendingProfileData(null);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
+      // No cerrar el modal para que el usuario pueda ver el error
     } finally {
       setIsUpdatingProfile(false);
     }
   };
 
-  const handlePasswordSubmit = async (_data: PasswordFormData) => {
+  const handlePasswordSubmit = async (data: PasswordFormData) => {
     setIsUpdatingPassword(true);
+    setPasswordError(null); // Limpiar errores previos
+    clearError(); // Limpiar errores del store también
+    
     try {
-      // Aquí iría la lógica para cambiar la contraseña
-      // Como no está en el userService actual, simularemos el proceso
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Datos de contraseña:', data);
       
-      // Limpiar el formulario
+      // Preparar datos para el endpoint de actualización de perfil
+      const passwordUpdateData = {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword
+      };
+      
+      // Usar el método updateProfile que maneja cambios de contraseña
+      await updateProfile(passwordUpdateData);
+      
+      // Limpiar el formulario solo si fue exitoso
       passwordForm.reset();
       
       // Mostrar mensaje de éxito
-      alert('Contraseña actualizada correctamente');
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error al actualizar contraseña:', error);
+      
+      // Extraer el mensaje específico del error
+      let errorMessage = 'Error al actualizar la contraseña';
+      
+      if (error && typeof error === 'object' && 'message' in error) {
+        // El error ya viene procesado desde el store con el mensaje del backend
+        errorMessage = String(error.message);
+      }
+      
+      setPasswordError(errorMessage);
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -246,8 +306,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
         )}
       </div>
 
-      {/* Error Message */}
-      {error && (
+      {/* Error Message - Solo mostrar si no estamos en tab de seguridad o no hay error de contraseña */}
+      {error && activeTab !== 'security' && (
         <Card className="border-red-200 bg-red-50">
           <div className="p-4">
             <div className="flex items-center">
@@ -275,7 +335,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {currentUser.firstName} {currentUser.lastName}
+                  {currentUser.firstname} {currentUser.lastname}
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
                   <Mail className="w-4 h-4 text-gray-400" />
@@ -408,6 +468,26 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
 
       {activeTab === 'security' && (
         <Card className="p-6">
+          {/* Error específico de contraseña */}
+          {passwordError && (
+            <div className="mb-6 p-4 border border-red-200 rounded-lg bg-red-50">
+              <div className="flex items-center">
+                <AlertCircle className="w-5 h-5 mr-2 text-red-600" />
+                <div className="text-sm font-medium text-red-600">
+                  {passwordError}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPasswordError(null)}
+                  className="ml-auto text-red-600 hover:text-red-800"
+                >
+                  ✕
+                </Button>
+              </div>
+            </div>
+          )}
+          
           <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-6">
             {/* Contraseña Actual */}
             <div>
@@ -514,6 +594,28 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
           </form>
         </Card>
       )}
+
+      {/* Modales */}
+      {currentUser && pendingProfileData && (
+        <ProfileUpdateModal
+          isOpen={showConfirmModal}
+          onClose={() => {
+            setShowConfirmModal(false);
+            setPendingProfileData(null);
+          }}
+          onConfirm={handleConfirmUpdate}
+          isLoading={isUpdatingProfile}
+          profileData={pendingProfileData}
+          currentUser={currentUser}
+        />
+      )}
+
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="¡Perfil Actualizado!"
+        message="Tu información personal ha sido actualizada correctamente. Los cambios se han guardado y están disponibles inmediatamente."
+      />
     </div>
   );
 };
