@@ -117,7 +117,7 @@ export const UserStatusModal: React.FC<UserStatusModalProps> = ({
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <h4 className="font-medium text-gray-900">
-                  {user.firstName} {user.lastName}
+                  {user.firstname} {user.lastname}
                 </h4>
                 <span className={`px-2 py-1 rounded-full border text-xs font-medium ${roleBadge.style}`}>
                   <Shield className="w-3 h-3 inline-block mr-1" />
