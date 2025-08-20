@@ -159,14 +159,73 @@ class UserRepository {
 // ==========================================
 // FUNCIONES DE UTILIDAD
 // ==========================================
+
+/**
+ * Interfaz para errores de API
+ */
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+      details?: string;
+    };
+    status?: number;
+  };
+}
+
+/**
+ * Extrae el mensaje de error más específico del response del backend
+ */
 const getErrorMessage = (error: unknown): string => {
+  // Si es un error de API que tiene response
+  if (error && typeof error === 'object' && 'response' in error) {
+    const apiError = error as ApiError;
+    
+    // Priorizar mensaje específico del backend
+    if (apiError.response?.data?.message) {
+      return apiError.response.data.message;
+    }
+    
+    // Fallback a detalles específicos
+    if (apiError.response?.data?.details) {
+      return apiError.response.data.details;
+    }
+    
+    // Mensaje genérico basado en status
+    if (apiError.response?.status) {
+      switch (apiError.response.status) {
+        case 400:
+          return 'Datos inválidos. Verifica la información ingresada.';
+        case 401:
+          return 'Credenciales incorrectas. Verifica tu contraseña actual.';
+        case 403:
+          return 'No tienes permisos para realizar esta acción.';
+        case 404:
+          return 'Usuario no encontrado.';
+        case 409:
+          return 'Conflicto: La operación no se puede completar.';
+        case 422:
+          return 'Los datos enviados no son válidos.';
+        case 500:
+          return 'Error interno del servidor. Intenta nuevamente.';
+        default:
+          return `Error del servidor (${apiError.response.status})`;
+      }
+    }
+  }
+  
+  // Si es un Error estándar de JavaScript
   if (error instanceof Error) {
     return error.message;
   }
+  
+  // Si es un string
   if (typeof error === 'string') {
     return error;
   }
-  return 'Error desconocido';
+  
+  // Fallback para errores desconocidos
+  return 'Error inesperado. Intenta nuevamente.';
 };
 
 const filterUsers = (users: User[], filters: UserFilters): User[] => {
@@ -174,7 +233,7 @@ const filterUsers = (users: User[], filters: UserFilters): User[] => {
     // Filtro de búsqueda
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
-      const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+      const fullName = `${user.firstname} ${user.lastname}`.toLowerCase();
       const matchesSearch = 
         fullName.includes(searchTerm) ||
         user.email.toLowerCase().includes(searchTerm);
@@ -291,11 +350,11 @@ export const useUserStore = create<UserState>()(
             user.id === userData.id.toString() 
               ? {
                   ...user,
-                  firstName: userData.firstname,
-                  lastName: userData.lastname,
+                  firstname: userData.firstname,
+                  lastname: userData.lastname,
                   email: userData.email,
                   role: userData.role,
-                  isActive: userData.isActive,
+                  ...(userData.isActive !== undefined && { isActive: userData.isActive }),
                   updatedAt: new Date().toISOString()
                 }
               : user
@@ -368,8 +427,9 @@ export const useUserStore = create<UserState>()(
             set({
               currentUserProfile: {
                 ...currentProfile,
-                firstName: profileData.firstname,
-                lastName: profileData.lastname,
+                ...(profileData.firstname !== undefined && { firstname: profileData.firstname }),
+                ...(profileData.lastname !== undefined && { lastname: profileData.lastname }),
+                ...(profileData.email !== undefined && { email: profileData.email }),
                 updatedAt: new Date().toISOString()
               },
               isLoading: false
