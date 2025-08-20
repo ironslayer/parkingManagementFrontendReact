@@ -15,6 +15,7 @@ import { useVehicleStore } from '../store/vehicleStore'
 import { PaymentStats } from '../components/payments/PaymentStats'
 import { MetricWidget } from '../components/dashboard/MetricWidget'
 import { Button, Card, CardHeader, CardContent } from '../components/ui'
+import { PermissionsDebugCard } from '../components/debug/PermissionsDebugCard'
 import { formatCurrency, formatDuration } from '../utils'
 
 // ==========================================
@@ -210,6 +211,9 @@ export const DashboardPage: React.FC = () => {
             Actualizar
           </Button>
         </div>
+
+        {/* Tarjeta de Debug de Permisos - Solo en desarrollo */}
+        <PermissionsDebugCard />
 
         {/* Métricas Principales */}
         {metrics && (
