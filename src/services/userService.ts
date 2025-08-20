@@ -20,12 +20,14 @@ export interface UpdateUserRequest {
   lastname: string;
   email: string;
   role: 'ADMIN' | 'OPERATOR';
-  isActive: boolean;
+  isActive?: boolean; // Campo opcional ya que se maneja por separado
+  password?: string; // Campo opcional para cambiar contraseña
 }
 
 export interface UserProfileUpdateRequest {
-  firstname: string;
-  lastname: string;
+  firstname?: string;
+  lastname?: string;
+  email?: string;
   currentPassword?: string;
   newPassword?: string;
 }
@@ -110,12 +112,42 @@ class UserService {
    */
   async updateUser(userData: UpdateUserRequest): Promise<void> {
     try {
+      console.log('🔄 UserService.updateUser iniciado');
+      console.log('📝 Datos recibidos:', userData);
+      
       // Validar datos de entrada
       this.validateUpdateUserData(userData);
+      console.log('✅ Validación exitosa');
 
-      await apiService.put<void>(this.baseUrl, userData);
+      // Preparar datos para el endpoint
+      const updatePayload: {
+        firstname: string;
+        lastname: string;
+        email: string;
+        role: string;
+        password?: string;
+      } = {
+        firstname: userData.firstname,
+        lastname: userData.lastname,
+        email: userData.email,
+        role: userData.role
+      };
+      
+      // Solo incluir password si se especifica y no está vacío
+      if (userData.password && userData.password.trim() !== '') {
+        updatePayload.password = userData.password;
+        console.log('🔐 Incluyendo actualización de contraseña');
+      }
+      
+      const url = `${this.baseUrl}/${userData.id}`;
+      console.log('📤 Enviando PATCH a:', url);
+      console.log('📤 Payload:', updatePayload);
+
+      // Usar PATCH para actualización del usuario por ID
+      await apiService.patch<void>(url, updatePayload);
+      console.log('✅ PATCH exitoso');
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('❌ Error updating user:', error);
       if (error instanceof Error) {
         throw error;
       }
@@ -170,13 +202,12 @@ class UserService {
       // Validar datos de entrada
       this.validateProfileData(profileData);
 
-      await apiService.put<void>(`${this.baseUrl}/profile`, profileData);
+      // Usar PATCH en lugar de PUT según la documentación API actualizada
+      await apiService.patch<void>(`${this.baseUrl}/profile`, profileData);
     } catch (error) {
       console.error('Error updating profile:', error);
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Error al actualizar el perfil');
+      // Re-lanzar el error original para que el store pueda extraer el mensaje del backend
+      throw error;
     }
   }
 
@@ -223,11 +254,15 @@ class UserService {
   }
 
   private validateProfileData(profileData: UserProfileUpdateRequest): void {
-    if (!profileData.firstname?.trim()) {
-      throw new Error('El nombre es requerido');
+    // Validar solo si se proporcionan los campos
+    if (profileData.firstname !== undefined && !profileData.firstname?.trim()) {
+      throw new Error('El nombre no puede estar vacío');
     }
-    if (!profileData.lastname?.trim()) {
-      throw new Error('El apellido es requerido');
+    if (profileData.lastname !== undefined && !profileData.lastname?.trim()) {
+      throw new Error('El apellido no puede estar vacío');
+    }
+    if (profileData.email !== undefined && !this.isValidEmail(profileData.email)) {
+      throw new Error('El formato del email es inválido');
     }
     
     // Validar contraseña solo si se está cambiando
@@ -257,8 +292,8 @@ class UserService {
     return {
       id: userResponse.id.toString(),
       email: userResponse.email,
-      firstName: userResponse.firstname,
-      lastName: userResponse.lastname,
+      firstname: userResponse.firstname,
+      lastname: userResponse.lastname,
       role: userResponse.role,
       isActive: userResponse.isActive,
       createdAt: userResponse.createdAt,
