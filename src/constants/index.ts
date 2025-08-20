@@ -13,6 +13,12 @@ export const ROUTES = {
   VEHICLES_NEW: '/vehicles/new',
   VEHICLES_EDIT: '/vehicles/:id/edit',
   
+  // Gestión de usuarios
+  USERS: '/users',
+  USERS_NEW: '/users/new',
+  USERS_EDIT: '/users/:id/edit',
+  PROFILE: '/profile',
+  
   // Gestión de sesiones
   SESSIONS: '/sessions',
   SESSIONS_ACTIVE: '/sessions/active',
@@ -41,6 +47,14 @@ export const API_CONFIG = {
       LOGOUT: '/users/logout',
       PROFILE: '/users/profile',
       REGISTER: '/users/register',
+      REGISTER_OPERATOR: '/users/register-operator',
+    },
+    
+    // Usuarios (ADMIN)
+    USERS: {
+      BASE: '/users',
+      BY_ID: (id: string) => `/users/${id}`,
+      PROFILE: '/users/profile',
       REGISTER_OPERATOR: '/users/register-operator',
     },
     
