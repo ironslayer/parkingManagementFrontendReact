@@ -17,8 +17,8 @@ export interface BaseEntity {
 export interface User {
   id: string
   email: string
-  firstName: string
-  lastName: string
+  firstname: string
+  lastname: string
   role: 'ADMIN' | 'OPERATOR'
   isActive: boolean
   createdAt: string
