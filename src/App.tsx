@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Car, Users, Calendar, Home } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Car, Users, Calendar, Home, Shield } from 'lucide-react'
 import './App.css'
 import { Button } from './components/ui/Button'
 import { Card, CardHeader, CardContent } from './components/ui/Card'
@@ -7,7 +7,7 @@ import { Badge } from './components/ui/Badge'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { DashboardHeader } from './components/layout/DashboardHeader'
 import { useAuthStore } from './store/authStore'
-import { usePermissions } from './hooks/usePermissions'
+import { usePermissionsDebug } from './hooks/usePermissions'
 import DashboardPage from './pages/DashboardPage'
 import VehiclesPage from './pages/VehiclesPage'
 import UsersPage from './pages/UsersPage'
@@ -19,7 +19,9 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState<Page>('dashboard')
   const { user, validateSession } = useAuthStore()
-  const { isAdmin, isOperator } = usePermissions()
+  
+  // Usar el hook de debug para obtener permisos y ver información en consola
+  const permissions = usePermissionsDebug()
 
   // Validar sesión al cargar la aplicación
   useEffect(() => {
@@ -31,12 +33,39 @@ function App() {
     initializeAuth()
   }, [validateSession])
 
-  const navigationItems = [
-    { id: 'dashboard' as Page, label: 'Dashboard', icon: Home, show: true },
-    { id: 'vehicles' as Page, label: 'Vehículos', icon: Car, show: true },
-    { id: 'users' as Page, label: 'Usuarios', icon: Users, show: isOperator || isAdmin },
-    { id: 'sessions' as Page, label: 'Sesiones', icon: Calendar, show: true }
-  ]
+  // Debug: Log cuando cambien los permisos
+  useEffect(() => {
+    console.log('🔄 Permisos actualizados en App:', {
+      canManageUsers: permissions.canManageUsers,
+      currentRole: permissions.currentRole,
+      isAuthenticated: permissions.isAuthenticated,
+      isLoading: permissions.isLoading
+    })
+  }, [permissions.canManageUsers, permissions.currentRole, permissions.isAuthenticated, permissions.isLoading])
+
+  // Recalcular navigationItems cuando cambien los permisos
+  const navigationItems = useMemo(() => {
+    const items = [
+      { id: 'dashboard' as Page, label: 'Dashboard', icon: Home, show: true },
+      { id: 'vehicles' as Page, label: 'Vehículos', icon: Car, show: true },
+      { 
+        id: 'users' as Page, 
+        label: 'Usuarios', 
+        icon: Users, 
+        show: permissions.canManageUsers // Solo usuarios con permiso MANAGE_USERS
+      },
+      { id: 'sessions' as Page, label: 'Sesiones', icon: Calendar, show: true }
+    ]
+
+    // Debug: mostrar qué items son visibles
+    console.log('📋 Navigation Items Update:', {
+      canManageUsers: permissions.canManageUsers,
+      visibleItems: items.filter(item => item.show).map(item => item.label),
+      usersTabVisible: items.find(item => item.id === 'users')?.show
+    })
+
+    return items
+  }, [permissions.canManageUsers]) // Dependencia de permisos
 
   const handleNavigation = (page: Page) => {
     setCurrentPage(page)
@@ -48,6 +77,29 @@ function App() {
       case 'vehicles':
         return <VehiclesPage />
       case 'users':
+        // Verificar que solo ADMIN puede acceder
+        if (!permissions.canManageUsers) {
+          return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+              <div className="max-w-md mx-auto">
+                <Card className="p-6 text-center">
+                  <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                    <Shield className="w-6 h-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Acceso Restringido
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Solo los administradores pueden acceder a la gestión de usuarios.
+                  </p>
+                  <Button onClick={() => setCurrentPage('dashboard')}>
+                    Ir al Dashboard
+                  </Button>
+                </Card>
+              </div>
+            </div>
+          );
+        }
         return (
           <div className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -71,7 +123,7 @@ function App() {
               {/* Welcome Card */}
               <Card className="mb-8" padding="lg">
                 <CardHeader 
-                  title={`¡Bienvenido ${user?.firstName}!`}
+                  title={`¡Bienvenido ${user?.firstname}!`}
                   subtitle="Sistema de Gestión de Parking - FASE 4 en Desarrollo"
                 />
                 <CardContent>
@@ -88,7 +140,7 @@ function App() {
                     </Button>
                     <Button variant="secondary" size="md">Perfil</Button>
                     <Button variant="outline" size="md">Configuración</Button>
-                    {isAdmin && (
+                    {permissions.canAccessAdminFeatures && (
                       <Button variant="warning" size="md">Panel Admin</Button>
                     )}
                   </div>
@@ -102,7 +154,7 @@ function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-                      <p className="text-gray-900">{user?.firstName} {user?.lastName}</p>
+                      <p className="text-gray-900">{user?.firstname} {user?.lastname}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -155,7 +207,9 @@ function App() {
         <h1 className="text-lg sm:text-xl font-bold text-white">ParkingApp</h1>
       </div>
       <nav className="flex-1 px-3 sm:px-4 py-4 sm:py-6 space-y-1 sm:space-y-2 overflow-y-auto">
-        {navigationItems.map((item) => (
+        {navigationItems
+          .filter(item => item.show) // ¡FILTRAR POR PERMISOS!
+          .map((item) => (
           <button
             key={item.id}
             onClick={() => handleNavigation(item.id)}
