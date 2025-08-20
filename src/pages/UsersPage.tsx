@@ -7,6 +7,7 @@ import { Button, Card, Input } from '../components/ui';
 import { UserForm } from '../components/users/UserForm';
 import { UserList } from '../components/users/UserList';
 import { UserStatusModal } from '../components/users/UserStatusModal';
+import { UserEditModal } from '../components/users/UserEditModal';
 import { useUserStore, type UserFilters } from '../store/userStore';
 import { useAuthStore } from '../store/authStore';
 import type { User } from '../types';
@@ -17,14 +18,24 @@ import type { CreateUserRequest, UpdateUserRequest } from '../services/userServi
 // ==========================================
 type ViewMode = 'list' | 'create' | 'edit';
 
-interface UserFormData {
+// Tipos compatibles con el formulario actualizado
+interface CreateUserFormData {
   firstname: string;
   lastname: string;
   email: string;
-  password?: string;
+  password: string;
   role: 'ADMIN' | 'OPERATOR';
   isActive: boolean;
 }
+
+interface EditUserFormData {
+  firstname: string;
+  lastname: string;
+  email: string;
+  role: 'ADMIN' | 'OPERATOR';
+}
+
+type UserFormData = CreateUserFormData | EditUserFormData;
 
 // ==========================================
 // COMPONENTE PRINCIPAL
@@ -49,6 +60,15 @@ export const UsersPage: React.FC = () => {
     user: null,
     newStatus: false,
     isLoading: false
+  });
+
+  // Estado para el modal de edición
+  const [editModal, setEditModal] = useState<{
+    isOpen: boolean;
+    user: User | null;
+  }>({
+    isOpen: false,
+    user: null
   });
 
   // ==========================================
@@ -87,6 +107,30 @@ export const UsersPage: React.FC = () => {
   }, [error, clearError]);
 
   // ==========================================
+  // VERIFICACIÓN DE PERMISOS
+  // ==========================================
+  // Solo usuarios ADMIN pueden acceder a la gestión de usuarios
+  if (!currentUser || currentUser.role !== 'ADMIN') {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-md mx-auto">
+          <Card className="p-6 text-center">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+              <Shield className="w-6 h-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Acceso Restringido
+            </h3>
+            <p className="text-gray-600">
+              Solo los administradores pueden acceder a la gestión de usuarios.
+            </p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
   // FUNCIONES DE FILTRADO
   // ==========================================
   const filters: UserFilters = {
@@ -107,8 +151,10 @@ export const UsersPage: React.FC = () => {
   };
 
   const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setViewMode('edit');
+    setEditModal({
+      isOpen: true,
+      user: user
+    });
   };
 
   const handleDeactivateUser = (userId: string) => {
@@ -175,33 +221,65 @@ export const UsersPage: React.FC = () => {
   const handleFormSubmit = async (data: UserFormData) => {
     try {
       if (viewMode === 'create') {
-        if (!data.password) {
+        // Type guard para CreateUserFormData
+        const createData = data as CreateUserFormData;
+        if (!createData.password) {
           throw new Error('La contraseña es requerida para crear un usuario');
         }
-        const createData: CreateUserRequest = {
-          firstname: data.firstname,
-          lastname: data.lastname,
-          email: data.email,
-          password: data.password
+        const requestData: CreateUserRequest = {
+          firstname: createData.firstname,
+          lastname: createData.lastname,
+          email: createData.email,
+          password: createData.password
         };
-        await createOperator(createData);
-      } else if (viewMode === 'edit' && selectedUser) {
-        const updateData: UpdateUserRequest = {
-          id: parseInt(selectedUser.id),
-          firstname: data.firstname,
-          lastname: data.lastname,
-          email: data.email,
-          role: data.role,
-          isActive: data.isActive
-        };
-        await updateUser(updateData);
+        await createOperator(requestData);
+        setViewMode('list');
+        setSelectedUser(null);
       }
-      setViewMode('list');
-      setSelectedUser(null);
     } catch (error) {
       console.error('Error en formulario:', error);
       throw error; // Re-lanzar para que lo maneje el componente UserForm
     }
+  };
+
+  const handleEditSubmit = async (data: UserFormData) => {
+    if (!editModal.user) return;
+    
+    console.log('🔄 Iniciando edición de usuario:', editModal.user.id);
+    console.log('📝 Datos del formulario:', data);
+    
+    try {
+      // Type guard para EditUserFormData
+      const editData = data as EditUserFormData;
+      const updateData: UpdateUserRequest = {
+        id: parseInt(editModal.user.id),
+        firstname: editData.firstname,
+        lastname: editData.lastname,
+        email: editData.email,
+        role: editData.role
+        // isActive se maneja a través del botón de estado en la tabla, no aquí
+      };
+      
+      console.log('📤 Enviando datos al backend:', updateData);
+      await updateUser(updateData);
+      console.log('✅ Usuario actualizado exitosamente');
+      
+      // Cerrar modal
+      setEditModal({
+        isOpen: false,
+        user: null
+      });
+    } catch (error) {
+      console.error('❌ Error en edición de usuario:', error);
+      throw error;
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditModal({
+      isOpen: false,
+      user: null
+    });
   };
 
   const handleCancelForm = () => {
@@ -417,6 +495,15 @@ export const UsersPage: React.FC = () => {
         user={statusModal.user}
         newStatus={statusModal.newStatus}
         isLoading={statusModal.isLoading}
+      />
+
+      {/* Modal de Edición de Usuario */}
+      <UserEditModal
+        isOpen={editModal.isOpen}
+        onClose={handleEditCancel}
+        onSubmit={handleEditSubmit}
+        user={editModal.user}
+        isLoading={isLoading}
       />
     </div>
   );
