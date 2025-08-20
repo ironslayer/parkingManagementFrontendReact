@@ -82,8 +82,8 @@ export class AuthService {
       const user: User = {
         id: profileResponse.id.toString(),
         email: profileResponse.email,
-        firstName: profileResponse.firstname || profileResponse.firstName || '',
-        lastName: profileResponse.lastname || profileResponse.lastName || '',
+        firstname: profileResponse.firstname || profileResponse.firstName || '',
+        lastname: profileResponse.lastname || profileResponse.lastName || '',
         role: (profileResponse.role === 'CUSTOMER') ? 'OPERATOR' : profileResponse.role as 'ADMIN' | 'OPERATOR',
         isActive: true,
         createdAt: profileResponse.createdAt,
@@ -109,8 +109,8 @@ export class AuthService {
           user: {
             id: '1',
             email: 'admin@parking.com',
-            firstName: 'Admin',
-            lastName: 'Sistema',
+            firstname: 'Admin',
+            lastname: 'User',
             role: 'ADMIN',
             isActive: true,
             createdAt: new Date().toISOString(),
@@ -133,8 +133,8 @@ export class AuthService {
           user: {
             id: '2',
             email: 'operator@parking.com',
-            firstName: 'Juan',
-            lastName: 'Operador',
+            firstname: 'Juan',
+            lastname: 'Operador',
             role: 'OPERATOR',
             isActive: true,
             createdAt: new Date().toISOString(),
@@ -157,8 +157,8 @@ export class AuthService {
           user: {
             id: '3',
             email: 'customer@parking.com',
-            firstName: 'Cliente',
-            lastName: 'Demo',
+                        firstname: 'Cliente',
+            lastname: 'Test',
             role: 'OPERATOR', // Cambiamos CUSTOMER por OPERATOR
             isActive: true,
             createdAt: new Date().toISOString(),
@@ -242,8 +242,8 @@ export class AuthService {
       const user: User = {
         id: response.id.toString(),
         email: response.email,
-        firstName: response.firstname || response.firstName || '',
-        lastName: response.lastname || response.lastName || '',
+        firstname: response.firstname || response.firstName || '',
+        lastname: response.lastname || response.lastName || '',
         role: (response.role === 'CUSTOMER') ? 'OPERATOR' : response.role as 'ADMIN' | 'OPERATOR',
         isActive: true,
         createdAt: response.createdAt,
@@ -329,8 +329,8 @@ export class AuthService {
       return {
         id: '1',
         email: 'admin@parking.com',
-        firstName: 'Admin',
-        lastName: 'Sistema',
+        firstname: 'Admin',
+        lastname: 'Sistema',
         role: 'ADMIN',
         isActive: true,
         createdAt: new Date().toISOString(),
@@ -342,8 +342,8 @@ export class AuthService {
       return {
         id: '2',
         email: 'operator@parking.com',
-        firstName: 'Juan',
-        lastName: 'Operador',
+        firstname: 'Juan',
+        lastname: 'Operador',
         role: 'OPERATOR',
         isActive: true,
         createdAt: new Date().toISOString(),
@@ -355,8 +355,8 @@ export class AuthService {
       return {
         id: '3',
         email: 'customer@parking.com',
-        firstName: 'Cliente',
-        lastName: 'Demo',
+        firstname: 'Cliente',
+        lastname: 'Demo',
         role: 'OPERATOR', // Cambiamos por OPERATOR ya que no hay CUSTOMER
         isActive: true,
         createdAt: new Date().toISOString(),
