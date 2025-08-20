@@ -92,8 +92,8 @@ class ParkingSessionRepository {
           processedBy: {
             id: '1',
             email: 'operator@parking.com',
-            firstName: 'María',
-            lastName: 'García',
+            firstname: 'María',
+            lastname: 'González',
             role: 'OPERATOR',
             isActive: true,
             createdAt: '2025-08-01T08:00:00Z',
@@ -106,8 +106,8 @@ class ParkingSessionRepository {
         operator: {
           id: '1',
           email: 'operator@parking.com',
-          firstName: 'María',
-          lastName: 'García',
+          firstname: 'María',
+          lastname: 'García',
           role: 'OPERATOR',
           isActive: true,
           createdAt: '2025-08-01T08:00:00Z',
@@ -140,8 +140,8 @@ class ParkingSessionRepository {
         operator: {
           id: '1',
           email: 'operator@parking.com',
-          firstName: 'María',
-          lastName: 'García',
+          firstname: 'María',
+          lastname: 'García',
           role: 'OPERATOR',
           isActive: true,
           createdAt: '2025-08-01T08:00:00Z',
@@ -203,8 +203,8 @@ class ParkingSessionRepository {
       operator: {
         id: '1',
         email: 'operator@parking.com',
-        firstName: 'María',
-        lastName: 'García',
+        firstname: 'María',
+        lastname: 'García',
         role: 'OPERATOR',
         isActive: true,
         createdAt: '2025-08-01T08:00:00Z',
