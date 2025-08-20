@@ -17,6 +17,7 @@ interface AuthState {
   logout: () => Promise<void>
   refreshTokenAsync: () => Promise<void>
   validateSession: () => Promise<void>
+  updateUser: (user: User) => void
   clearError: () => void
   setLoading: (loading: boolean) => void
 }
@@ -141,6 +142,10 @@ export const useAuthStore = create<AuthState>()(
             error: null
           })
         }
+      },
+
+      updateUser: (user: User) => {
+        set({ user })
       },
 
       clearError: () => set({ error: null }),
