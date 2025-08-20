@@ -173,7 +173,7 @@ export const UserList: React.FC<UserListProps> = ({
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {user.firstName} {user.lastName}
+                            {user.firstname} {user.lastname}
                           </div>
                           <div className="text-sm text-gray-500">
                             ID: {user.id}
@@ -258,7 +258,7 @@ export const UserList: React.FC<UserListProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-gray-900">
-                    {user.firstName} {user.lastName}
+                    {user.firstname} {user.lastname}
                   </h3>
                   <p className="text-sm text-gray-600">{user.email}</p>
                   <p className="text-xs text-gray-500">ID: {user.id}</p>
