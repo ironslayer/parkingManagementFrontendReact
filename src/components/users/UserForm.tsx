@@ -12,7 +12,7 @@ import type { User as UserType } from '../../types';
 // ==========================================
 // SCHEMA DE VALIDACIÓN
 // ==========================================
-const userFormSchema = z.object({
+const createUserFormSchema = z.object({
   firstname: z
     .string()
     .min(1, 'El nombre es requerido')
@@ -35,7 +35,7 @@ const userFormSchema = z.object({
     .string()
     .min(5, 'La contraseña debe tener al menos 5 caracteres')
     .max(50, 'La contraseña no puede exceder 50 caracteres')
-    .optional(),
+    .regex(/^(?=.*[a-zA-Z])(?=.*[0-9!@#$%^&*()_+=\-{}[\]|\\:";'<>?,./]).*$/, 'La contraseña debe contener al menos una letra y un número o carácter especial (incluyendo _)'),
   
   role: z
     .enum(['ADMIN', 'OPERATOR']),
@@ -44,12 +44,36 @@ const userFormSchema = z.object({
     .boolean()
 });
 
-type UserFormData = z.infer<typeof userFormSchema>;
+const editUserFormSchema = z.object({
+  firstname: z
+    .string()
+    .min(1, 'El nombre es requerido')
+    .max(50, 'El nombre no puede exceder 50 caracteres')
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El nombre solo puede contener letras'),
+  
+  lastname: z
+    .string()
+    .min(1, 'El apellido es requerido')
+    .max(50, 'El apellido no puede exceder 50 caracteres')
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El apellido solo puede contener letras'),
+  
+  email: z
+    .string()
+    .min(1, 'El email es requerido')
+    .email('Formato de email inválido')
+    .max(100, 'El email no puede exceder 100 caracteres'),
+  
+  role: z
+    .enum(['ADMIN', 'OPERATOR'])
+});
+
+type CreateUserFormData = z.infer<typeof createUserFormSchema>;
+type EditUserFormData = z.infer<typeof editUserFormSchema>;
 
 // ==========================================
 // VALORES POR DEFECTO
 // ==========================================
-const defaultValues: UserFormData = {
+const createDefaultValues: CreateUserFormData = {
   firstname: '',
   lastname: '',
   email: '',
@@ -58,12 +82,19 @@ const defaultValues: UserFormData = {
   isActive: true
 };
 
+const editDefaultValues: EditUserFormData = {
+  firstname: '',
+  lastname: '',
+  email: '',
+  role: 'OPERATOR'
+};
+
 // ==========================================
 // PROPS DEL COMPONENTE
 // ==========================================
 interface UserFormProps {
   user?: UserType;
-  onSubmit: (data: UserFormData) => Promise<void>;
+  onSubmit: (data: CreateUserFormData | EditUserFormData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
   mode: 'create' | 'edit';
@@ -79,260 +110,333 @@ export const UserForm: React.FC<UserFormProps> = ({
   isLoading = false,
   mode
 }) => {
+  if (mode === 'create') {
+    return <CreateUserForm onSubmit={onSubmit} onCancel={onCancel} isLoading={isLoading} />;
+  } else {
+    return <EditUserForm user={user} onSubmit={onSubmit} onCancel={onCancel} isLoading={isLoading} />;
+  }
+};
+
+// ==========================================
+// COMPONENTE PARA CREAR USUARIO
+// ==========================================
+const CreateUserForm: React.FC<{
+  onSubmit: (data: CreateUserFormData) => Promise<void>;
+  onCancel: () => void;
+  isLoading: boolean;
+}> = ({ onSubmit, onCancel, isLoading }) => {
   const [showPassword, setShowPassword] = React.useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
-    setValue
-  } = useForm<UserFormData>({
-    resolver: zodResolver(userFormSchema),
-    defaultValues
+    reset
+  } = useForm<CreateUserFormData>({
+    resolver: zodResolver(createUserFormSchema),
+    defaultValues: createDefaultValues
   });
 
-  // ==========================================
-  // LLENAR FORMULARIO EN MODO EDICIÓN
-  // ==========================================
-  useEffect(() => {
-    if (mode === 'edit' && user) {
-      setValue('firstname', user.firstName);
-      setValue('lastname', user.lastName);
-      setValue('email', user.email);
-      setValue('role', user.role);
-      setValue('isActive', user.isActive);
-      // No establecer contraseña en modo edición
-    }
-  }, [mode, user, setValue]);
+  console.log('🔄 CreateUserForm render - isSubmitting:', isSubmitting);
+  console.log('🔍 Errores de validación:', errors);
 
   // ==========================================
-  // MANEJAR ENVÍO DEL FORMULARIO
+  // FUNCIÓN DE ENVÍO
   // ==========================================
-  const handleFormSubmit = async (data: UserFormData) => {
+  const handleFormSubmit = async (data: CreateUserFormData) => {
+    console.log('🚀 Datos del formulario de creación:', data);
     try {
       await onSubmit(data);
-      if (mode === 'create') {
-        reset(); // Limpiar formulario solo en modo creación
-      }
+      reset();
     } catch (error) {
-      // El error ya se maneja en el componente padre
-      console.error('Error en formulario:', error);
+      console.error('❌ Error al crear usuario:', error);
     }
   };
 
-  // ==========================================
-  // TÍTULO DEL FORMULARIO
-  // ==========================================
-  const getTitle = () => {
-    if (mode === 'create') return 'Crear Nuevo Operador';
-    if (mode === 'edit') return 'Editar Usuario';
-    return 'Formulario de Usuario';
-  };
-
-  const getSubtitle = () => {
-    if (mode === 'create') return 'Complete los datos para crear un nuevo operador';
-    if (mode === 'edit') return 'Modifique los datos del usuario seleccionado';
-    return '';
-  };
-
-  // ==========================================
-  // RENDER
-  // ==========================================
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="max-w-2xl mx-auto">
       <div className="p-6">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <User className="w-6 h-6 text-blue-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              {getTitle()}
-            </h2>
-            <p className="text-sm text-gray-600">
-              {getSubtitle()}
-            </p>
-          </div>
+        <div className="flex items-center mb-6">
+          <User className="w-6 h-6 text-blue-600 mr-3" />
+          <h2 className="text-xl font-semibold text-gray-900">Crear Nuevo Usuario</h2>
         </div>
 
-        {/* Loading Spinner */}
-        {isLoading && (
-          <div className="flex justify-center py-8">
-            <LoadingSpinner size="lg" />
-          </div>
-        )}
-
-        {/* Formulario */}
-        {!isLoading && (
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-            {/* Nombre y Apellido */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="firstname" className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre *
-                </label>
-                <Input
-                  id="firstname"
-                  type="text"
-                  placeholder="Ej: Juan"
-                  error={errors.firstname?.message}
-                  {...register('firstname')}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="lastname" className="block text-sm font-medium text-gray-700 mb-2">
-                  Apellido *
-                </label>
-                <Input
-                  id="lastname"
-                  type="text"
-                  placeholder="Ej: Pérez"
-                  error={errors.lastname?.message}
-                  {...register('lastname')}
-                />
-              </div>
-            </div>
-
-            {/* Email */}
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Nombre */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email *
+              <label htmlFor="firstname" className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre *
               </label>
               <Input
-                id="email"
-                type="email"
-                placeholder="operador@parking.com"
-                error={errors.email?.message}
-                {...register('email')}
-                disabled={mode === 'edit'} // Email no editable en modo edición
+                id="firstname"
+                type="text"
+                placeholder="Ej: Juan"
+                error={errors.firstname?.message}
+                {...register('firstname')}
               />
-              {mode === 'edit' && (
-                <p className="text-xs text-gray-500 mt-1">
-                  El email no se puede modificar
-                </p>
-              )}
             </div>
 
-            {/* Contraseña */}
-            {mode === 'create' && (
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Contraseña *
-                </label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Mínimo 5 caracteres"
-                    error={errors.password?.message}
-                    {...register('password')}
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  La contraseña debe tener al menos 5 caracteres
-                </p>
-              </div>
-            )}
-
-            {/* Rol */}
+            {/* Apellido */}
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                Rol *
+              <label htmlFor="lastname" className="block text-sm font-medium text-gray-700 mb-2">
+                Apellido *
               </label>
-              <select
-                id="role"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                {...register('role')}
-              >
-                <option value="OPERATOR">Operador</option>
-                <option value="ADMIN">Administrador</option>
-              </select>
-              {errors.role && (
-                <p className="text-sm text-red-600 mt-1">{errors.role.message}</p>
-              )}
+              <Input
+                id="lastname"
+                type="text"
+                placeholder="Ej: Pérez"
+                error={errors.lastname?.message}
+                {...register('lastname')}
+              />
             </div>
+          </div>
 
-            {/* Estado - Solo en modo edición */}
-            {mode === 'edit' && (
-              <div className="flex items-center gap-3">
-                <input
-                  id="isActive"
-                  type="checkbox"
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  {...register('isActive')}
-                />
-                <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                  Usuario activo
-                </label>
-              </div>
-            )}
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email *
+            </label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Ej: juan.perez@empresa.com"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+          </div>
 
-            {/* Información adicional para edición */}
-            {mode === 'edit' && user && (
-              <div className="pt-4 border-t border-gray-200">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">
-                  Información del Usuario
-                </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">ID:</span>
-                    <div className="font-medium text-gray-900">{user.id}</div>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Miembro desde:</span>
-                    <div className="font-medium text-gray-900">
-                      {new Date(user.createdAt).toLocaleDateString('es-ES')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Botones */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={isSubmitting}
-                className="flex-1 sm:flex-none"
-              >
-                {isSubmitting ? (
-                  <>
-                    <LoadingSpinner size="sm" className="mr-2" />
-                    {mode === 'create' ? 'Creando...' : 'Guardando...'}
-                  </>
-                ) : (
-                  <>
-                    {mode === 'create' ? 'Crear Operador' : 'Guardar Cambios'}
-                  </>
-                )}
-              </Button>
-              
-              <Button
+          {/* Contraseña */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              Contraseña *
+            </label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Mínimo 5 caracteres"
+                error={errors.password?.message}
+                {...register('password')}
+              />
+              <button
                 type="button"
-                variant="secondary"
-                onClick={onCancel}
-                disabled={isSubmitting}
-                className="flex-1 sm:flex-none"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={() => setShowPassword(!showPassword)}
               >
-                Cancelar
-              </Button>
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
-          </form>
-        )}
+            <p className="text-xs text-gray-500 mt-1">
+              La contraseña debe tener al menos 5 caracteres, incluyendo caracteres especiales
+            </p>
+          </div>
+
+          {/* Rol */}
+          <div>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+              Rol *
+            </label>
+            <select
+              id="role"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              {...register('role')}
+            >
+              <option value="OPERATOR">Operador</option>
+              <option value="ADMIN">Administrador</option>
+            </select>
+            {errors.role && (
+              <p className="text-sm text-red-600 mt-1">{errors.role.message}</p>
+            )}
+          </div>
+
+          {/* Estado Activo */}
+          <div className="flex items-center">
+            <input
+              id="isActive"
+              type="checkbox"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              {...register('isActive')}
+            />
+            <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
+              Usuario activo
+            </label>
+          </div>
+
+          {/* Botones */}
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onCancel}
+              disabled={isSubmitting || isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || isLoading}
+            >
+              {isSubmitting || isLoading ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Creando...
+                </>
+              ) : (
+                'Crear Usuario'
+              )}
+            </Button>
+          </div>
+        </form>
       </div>
     </Card>
   );
 };
 
-export default UserForm;
+// ==========================================
+// COMPONENTE PARA EDITAR USUARIO
+// ==========================================
+const EditUserForm: React.FC<{
+  user?: UserType;
+  onSubmit: (data: EditUserFormData) => Promise<void>;
+  onCancel: () => void;
+  isLoading: boolean;
+}> = ({ user, onSubmit, onCancel, isLoading }) => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue
+  } = useForm<EditUserFormData>({
+    resolver: zodResolver(editUserFormSchema),
+    defaultValues: editDefaultValues
+  });
+
+  console.log('🔄 EditUserForm render - isSubmitting:', isSubmitting);
+  console.log('🔍 Errores de validación:', errors);
+
+  // ==========================================
+  // LLENAR FORMULARIO CON DATOS DEL USUARIO
+  // ==========================================
+  useEffect(() => {
+    if (user) {
+      setValue('firstname', user.firstname);
+      setValue('lastname', user.lastname);
+      setValue('email', user.email);
+      setValue('role', user.role);
+      // isActive se maneja a través del botón de estado en la tabla
+    }
+  }, [user, setValue]);
+
+  // ==========================================
+  // FUNCIÓN DE ENVÍO
+  // ==========================================
+  const handleFormSubmit = async (data: EditUserFormData) => {
+    console.log('🚀 Datos del formulario de edición:', data);
+    try {
+      await onSubmit(data);
+    } catch (error) {
+      console.error('❌ Error al actualizar usuario:', error);
+    }
+  };
+
+  return (
+    <Card className="max-w-2xl mx-auto">
+      <div className="p-6">
+        <div className="flex items-center mb-6">
+          <User className="w-6 h-6 text-blue-600 mr-3" />
+          <h2 className="text-xl font-semibold text-gray-900">Editar Usuario</h2>
+        </div>
+
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Nombre */}
+            <div>
+              <label htmlFor="firstname" className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre *
+              </label>
+              <Input
+                id="firstname"
+                type="text"
+                placeholder="Ej: Juan"
+                error={errors.firstname?.message}
+                {...register('firstname')}
+              />
+            </div>
+
+            {/* Apellido */}
+            <div>
+              <label htmlFor="lastname" className="block text-sm font-medium text-gray-700 mb-2">
+                Apellido *
+              </label>
+              <Input
+                id="lastname"
+                type="text"
+                placeholder="Ej: Pérez"
+                error={errors.lastname?.message}
+                {...register('lastname')}
+              />
+            </div>
+          </div>
+
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email *
+            </label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Ej: juan.perez@empresa.com"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+          </div>
+
+          {/* Rol */}
+          <div>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+              Rol *
+            </label>
+            <select
+              id="role"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              {...register('role')}
+            >
+              <option value="OPERATOR">Operador</option>
+              <option value="ADMIN">Administrador</option>
+            </select>
+            {errors.role && (
+              <p className="text-sm text-red-600 mt-1">{errors.role.message}</p>
+            )}
+          </div>
+
+          {/* Botones */}
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onCancel}
+              disabled={isSubmitting || isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || isLoading}
+            >
+              {isSubmitting || isLoading ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Guardando cambios...
+                </>
+              ) : (
+                'Guardar Cambios'
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </Card>
+  );
+};
